@@ -7,7 +7,6 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = 'H:/My Drive/r01')
 ```
 
 ```{r}
@@ -26,7 +25,7 @@ library(ggbeeswarm)
 ```
 
 ```{r, fig.height = 8, fig.width = 8}
-data0 <- import('H:/My Drive/r01/allmaps_fullbrain_relabeled.xlsx',sheet='fullbrain4.2.nohcp')
+data0 <- import('Dataset Maps.xlsx',sheet='Whole-brain Curated Maps')
 
 data0[] <- lapply(data0, as.numeric)
 data0 <- apply(data0, 2, scale)
@@ -37,7 +36,7 @@ heatmap.2(data.matrix(correlation_matrix), dendrogram = c("none"), Rowv = NA, Co
 ```
 
 ```{r, fig.height = 8, fig.width = 8}
-data_ns <- import('RDoCseedmaps_fullbrain.xlsx',sheet='Avg347_smoothedthresholded')
+data_ns <- import('Dataset Maps.xlsx',sheet='Wholebrain Held-out Maps')
 
 columns_to_remove <- c("PVSRR_anticipation","PVSRL_probability","PVSRV_delay","CSP_visual", "CSP_auditory","CSP_somatosensory","CSCC_representation","CSCC_monitoring","CSCC_performance","CSWM_flexible","CSWM_capacity","SPMSU_mental_state","SSMA_planning","SSMA_selection","SSMA_dynamic","SSMA_sensory_action", "ARCRSW_circadian_sleep_wakefulness")
 data_ns <- data_ns[, !(names(data_ns) %in% columns_to_remove)]
