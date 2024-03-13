@@ -25,7 +25,7 @@ library(circlize)
 ```
 
 ```{r, fig.height = 8, fig.width = 8}
-data_exc <- import('H:/My Drive/r01/allmaps_fullbrain_relabeled.xlsx',sheet='fullbrain4.2_exc')
+data_exc <- import('Dataset Maps.xlsx',sheet='Wholebrain Held-out Maps')
 
 data_exc[] <- lapply(data_exc, as.numeric)
 data_exc <- apply(data_exc, 2, scale)
