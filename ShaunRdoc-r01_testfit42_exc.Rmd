@@ -35,288 +35,7 @@ correlation_matrix <- cor(data_exc)
 heatmap.2(data.matrix(correlation_matrix), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
 ```
 
-```{r, fig.height = 8, fig.width = 8}
-EFA.fit <- fa(data_exc, nfactors=6, rotate="oblimin", fm="pa")
-fa.diagram(EFA.fit)
-print(EFA.fit,sort=TRUE)
-
-loadings = EFA.fit$loadings
-loadings <- loadings[order(row.names(loadings)), ]
-loadings[loadings < .4 & loadings > -.4] <- 0
-heatmap.2(data.matrix(loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
-```
-
-```{r, fig.height = 8, fig.width = 8}
-# model specification
-library(dplyr)
-rm(factor_definitions, cfa.fit.model, cfanobi.fit.model, rdoc.fit.model,rdocbi.fit.model)
-# Extract variables with nonzero loadings from the loadings table
-nonzero_loadings <- loadings[rowSums(abs(loadings)) > 0, ]
-# Create a list to store factor definitions
-factor_definitions <- list()
-# Create a list to store variable names for the 'g' factor
-g_variables <- character(0)
-# Iterate through the columns (factors) with nonzero loadings
-for (i in 1:ncol(nonzero_loadings)) {
-  # Get the factor name
-  factor_name <- colnames(nonzero_loadings)[i]
-  # Get the variable names with nonzero loadings for this factor
-  variables <- rownames(nonzero_loadings)[nonzero_loadings[, i] != 0]
-  # Create the factor definition for this factor
-  factor_definition <- paste(factor_name, "=~", paste(variables, collapse = " + "))
-  # Add the factor definition to the list
-  factor_definitions[[i]] <- factor_definition
-  # Add variables to the 'g' factor
-  g_variables <- union(g_variables, variables)
-}
-
-# Create the 'g' factor definition
-all_variables <- rownames(loadings)
-g_definition <- paste("g =~", paste(all_variables, collapse = " + "))
-# Combine the factor definitions into a single CFA model specification
-cfanobi.fit.model <- paste(factor_definitions, collapse = "\n")
-# Combine all factor definitions into cfa.fit.model
-cfa.fit.model <- c(g_definition, factor_definitions)
-cfa.fit.model <- paste(cfa.fit.model, collapse = "\n")
-
-# Print both model specifications
-cat("cfa.fit.model:\n", cfa.fit.model, "\n\n")
-cat("cfanobi.fit.model:\n", cfanobi.fit.model, "\n\n")
-
-rdoc_factor_definitions <- list()
-# Iterate through unique first two characters
-unique_chars <- unique(substr(all_variables, 1, 2))
-for (char in unique_chars) {
-  # Get variables with the same first two characters
-  char_variables <- grep(paste0("^", char), all_variables, value = TRUE)
-  # Create the factor definition for this set of variables
-  factor_definition <- paste(char, "=~", paste(char_variables, collapse = " + "))
-  # Add the factor definition to the list
-  rdoc_factor_definitions[[char]] <- factor_definition
-}
-# Combine all factor definitions into rdoc.fit.model
-rdoc.fit.model <- unlist(rdoc_factor_definitions, use.names = FALSE)
-rdoc.fit.model <- paste(rdoc.fit.model, collapse = "\n")
-rdocbi.fit.model <- c(g_definition, rdoc.fit.model)
-cat("rdoc.fit.model:\n", rdoc.fit.model, "\n\n")
-cat("rdocbi.fit.model:\n", rdocbi.fit.model, "\n\n")
-```
-#CFA bifactor model based on EFA
-```{r, fig.height = 8, fig.width = 8}
-cfa.testfit = cfa(cfa.fit.model, data_exc, estimator = "MLR", orthogonal = TRUE, std.lv = TRUE)
-semPaths(cfa.testfit, whatLabels = "std", layout="tree", edge.label.cex=1)
-summary(cfa.testfit, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
-cfa.testfit.r2 = inspect(cfa.testfit, 'r2')
-
-cfa.loadings = inspect(cfa.testfit,what="std")$lambda
-cfa.loadings = cfa.loadings[order(row.names(cfa.loadings)), ]
-cfa.loadings = cfa.loadings[, order(colnames(cfa.loadings))]
-# cfa.loadings[cfa.loadings < .4 & cfa.loadings > -.4] <- 0
-plot = heatmap.2(data.matrix(cfa.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
-```
-
-```{r, fig.height = 8, fig.width = 8}
-# Initialize a list to store assignments for each factor
-assignments_list <- list()
-
-# Loop through each variable in data_exc
-for (var_name in colnames(data_exc)) {
-  # Initialize a vector to store the sums of products for each factor
-  sums_of_products <- numeric(length(colnames(dd.cbfa.fscores_nog)))
-  
-  # Calculate the sums of products for each factor
-  for (i in 1:length(colnames(dd.cbfa.fscores_nog))) {
-    factor_name <- colnames(dd.cbfa.fscores_nog)[i]
-    product_sum <- sum(data_exc[, var_name] * dd.cbfa.fscores_nog[, factor_name])
-    sums_of_products[i] <- product_sum
-  }
-  
-  # Find the factor with the highest sum of products
-  best_factor_index <- which.max(sums_of_products)
-  best_factor <- colnames(dd.cbfa.fscores_nog)[best_factor_index]
-  
-  # Create an assignment string without repeating the factor name
-  assignment <- paste(var_name)
-  
-  # Append the assignment to the corresponding factor's list
-  if (!(best_factor %in% names(assignments_list))) {
-    assignments_list[[best_factor]] <- character(0)
-  }
-  assignments_list[[best_factor]] <- c(assignments_list[[best_factor]], assignment)
-}
-
-# Create an additional factor "g" and assign all variables to it
-assignments_list[["g"]] <- colnames(data_exc)
-
-# Combine assignments into the final CFA model specification
-cfa.testfit.model <- sapply(names(assignments_list), function(factor_name) {
-  paste(factor_name, "=~", paste(assignments_list[[factor_name]], collapse = " + "))
-})
-
-# Print the final CFA model specification
-cat(paste(cfa.testfit.model, collapse = "\n"))
-```
-
-```{r, fig.height = 8, fig.width = 8}
-# Initialize a list to store assignments for each factor
-assignments_list <- list()
-
-# Loop through each variable in data_exc
-for (var_name in colnames(data_exc)) {
-  # Initialize a vector to store the sums of products for each factor
-  sums_of_products <- numeric(length(colnames(rdoc.cfa.fscores)))
-  
-  # Calculate the sums of products for each factor
-  for (i in 1:length(colnames(rdoc.cfa.fscores))) {
-    factor_name <- colnames(rdoc.cfa.fscores)[i]
-    product_sum <- sum(data_exc[, var_name] * rdoc.cfa.fscores[, factor_name])
-    sums_of_products[i] <- product_sum
-  }
-  
-  # Find the factor with the highest sum of products
-  best_factor_index <- which.max(sums_of_products)
-  best_factor <- colnames(rdoc.cfa.fscores)[best_factor_index]
-  
-  # Create an assignment string without repeating the factor name
-  assignment <- paste(var_name)
-  
-  # Append the assignment to the corresponding factor's list
-  if (!(best_factor %in% names(assignments_list))) {
-    assignments_list[[best_factor]] <- character(0)
-  }
-  assignments_list[[best_factor]] <- c(assignments_list[[best_factor]], assignment)
-}
-
-# Combine assignments into the final CFA model specification
-rdoc.testfit.model <- sapply(names(assignments_list), function(factor_name) {
-  paste(factor_name, "=~", paste(assignments_list[[factor_name]], collapse = " + "))
-})
-
-# Print the final CFA model specification
-cat(paste(rdoc.testfit.model, collapse = "\n"))
-```
-
-```{r, fig.height = 8, fig.width = 8}
-cfa.testfit = cfa(cfa.testfit.model, data_exc, estimator = "MLR", std.lv = TRUE, check.gradient = FALSE)
-semPaths(cfa.testfit, whatLabels = "std", layout="tree", edge.label.cex=1)
-# summary(cfa.testfit, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
-cfa.testfit.r2 = inspect(cfa.testfit, 'r2')
-
-cfa.testfit.loadings = inspect(cfa.testfit,what="std")$lambda
-cfa.testfit.loadings = cfa.testfit.loadings[order(row.names(cfa.testfit.loadings)), ]
-cfa.testfit.loadings = cfa.testfit.loadings[, order(colnames(cfa.testfit.loadings))]
-# cfa.testfit.loadings[cfa.testfit.loadings < .4 & cfa.testfit.loadings > -.4] <- 0
-plot = heatmap.2(data.matrix(cfa.testfit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
-
-# cfa.testfit.rmsea = fitMeasures(cfa.testfit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
-# cfa.testfit.cfi = fitMeasures(cfa.testfit, c("cfi.robust", "tli.robust", "srmr.robust"))
-# cfa.testfit.tli = fitMeasures(cfa.testfit, c("tli.robust"))
-# cfa.testfit.aicbic = fitMeasures(cfa.testfit, c("aic", "bic"))
-
-lavInspect(cfa.testfit, "cov.lv")
-```
-
-```{r, fig.height = 8, fig.width = 8}
-rdoc.testfit = cfa(rdoc.testfit.model, data_exc, estimator = "MLR", std.lv = TRUE,check.gradient = FALSE)
-semPaths(rdoc.testfit, whatLabels = "std", layout="tree", edge.label.cex=1)
-summary(rdoc.testfit, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
-rdoc.testfit.r2 = inspect(rdoc.testfit, 'r2')
-
-rdoc.testfit.loadings = inspect(rdoc.testfit,what="std")$lambda
-rdoc.testfit.loadings = rdoc.testfit.loadings[order(row.names(rdoc.testfit.loadings)), ]
-rdoc.testfit.loadings = rdoc.testfit.loadings[, order(colnames(rdoc.testfit.loadings))]
-# rdoc.testfit.loadings[rdoc.testfit.loadings < .4 & rdoc.testfit.loadings > -.4] <- 0
-plot = heatmap.2(data.matrix(rdoc.testfit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col = colorRampPalette(c("white", "red"))(100))
-
-rdoc.testfit.rmsea = fitMeasures(rdoc.testfit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
-rdoc.testfit.cfi = fitMeasures(rdoc.testfit, c("cfi.robust", "tli.robust", "srmr.robust"))
-rdoc.testfit.tli = fitMeasures(rdoc.testfit, c("tli.robust"))
-rdoc.testfit.aicbic = fitMeasures(rdoc.testfit, c("aic", "bic"))
-
-lavInspect(rdoc.testfit, "cov.lv")
-```
-
-```{r, fig.height = 8, fig.width = 8}
-# Initialize a list to store assignments for each factor
-assignments_list <- list()
-
-# Loop through each variable in data_exc
-for (var_name in colnames(data_exc)) {
-  # Initialize a vector to store the sums of products for each factor
-  sums_of_products <- numeric(length(colnames(dd.cbfa.fscores_nog)))
-  
-  # Calculate the sums of products for each factor
-  for (i in 1:length(colnames(dd.cbfa.fscores_nog))) {
-    factor_name <- colnames(dd.cbfa.fscores_nog)[i]
-    product_sum <- sum(data_exc[, var_name] * dd.cbfa.fscores_nog[, factor_name])
-    sums_of_products[i] <- product_sum
-  }
-  
-  # Find the factor with the highest sum of products
-  best_factor_index <- which.max(sums_of_products)
-  best_factor <- colnames(dd.cbfa.fscores_nog)[best_factor_index]
-  
-  # Create an assignment string without repeating the factor name
-  assignment <- paste(var_name)
-  
-  # Append the assignment to the corresponding factor's list
-  if (!(best_factor %in% names(assignments_list))) {
-    assignments_list[[best_factor]] <- character(0)
-  }
-  assignments_list[[best_factor]] <- c(assignments_list[[best_factor]], assignment)
-}
-
-# Create an additional factor "g" and assign all variables to it
-assignments_list[["g"]] <- colnames(data_exc)
-
-# Combine assignments into the final CFA model specification
-cfa.testfit.model <- sapply(names(assignments_list), function(factor_name) {
-  paste(factor_name, "=~", paste(assignments_list[[factor_name]], collapse = " + "))
-})
-
-# Print the final CFA model specification
-cat(paste(cfa.testfit.model, collapse = "\n"))
-```
-
-```{r, fig.height = 8, fig.width = 8}
-# Initialize a list to store assignments for each factor
-assignments_list <- list()
-
-# Loop through each variable in data_exc
-for (var_name in colnames(data_exc)) {
-  # Initialize a vector to store the sums of products for each factor
-  sums_of_products <- numeric(length(colnames(rdoc.cfa.fscores)))
-  
-  # Calculate the sums of products for each factor
-  for (i in 1:length(colnames(rdoc.cfa.fscores))) {
-    factor_name <- colnames(rdoc.cfa.fscores)[i]
-    product_sum <- sum(data_exc[, var_name] * rdoc.cfa.fscores[, factor_name])
-    sums_of_products[i] <- product_sum
-  }
-  
-  # Find the factor with the highest sum of products
-  best_factor_index <- which.max(sums_of_products)
-  best_factor <- colnames(rdoc.cfa.fscores)[best_factor_index]
-  
-  # Create an assignment string without repeating the factor name
-  assignment <- paste(var_name)
-  
-  # Append the assignment to the corresponding factor's list
-  if (!(best_factor %in% names(assignments_list))) {
-    assignments_list[[best_factor]] <- character(0)
-  }
-  assignments_list[[best_factor]] <- c(assignments_list[[best_factor]], assignment)
-}
-
-# Combine assignments into the final CFA model specification
-rdoc.testfit.model <- sapply(names(assignments_list), function(factor_name) {
-  paste(factor_name, "=~", paste(assignments_list[[factor_name]], collapse = " + "))
-})
-
-# Print the final CFA model specification
-cat(paste(rdoc.testfit.model, collapse = "\n"))
-```
-
+# Data-driven internal validation model
 ```{r, fig.height = 8, fig.width = 8}
 # Initialize a list to store assignments for each factor
 assignments_list <- list()
@@ -376,63 +95,8 @@ cfa.testfit.model <- c(g_definition, cfa.testfit.model)
 # Print the final CFA model specification
 cat(paste(cfa.testfit.model, collapse = "\n"))
 ```
-```{r, fig.height = 8, fig.width = 8}
-# Initialize a list to store assignments for each factor
-assignments_list <- list()
 
-# Initialize a list to store the highest sum of products for each factor
-highest_sums <- list()
-
-# Loop through each variable in data_exc
-for (var_name in colnames(data_exc)) {
-  # Initialize variables to keep track of the best factor and its sum of products
-  best_factor <- NULL
-  best_sum_of_products <- -Inf
-
-  # Calculate the sums of products for each factor
-  for (i in 1:length(colnames(dd.cbfa.fscores_nog))) {
-    factor_name <- colnames(dd.cbfa.fscores_nog)[i]
-    product_sum <- sum(data_exc[, var_name] * dd.cbfa.fscores_nog[, factor_name])
-    
-    # Check if this factor has a higher sum of products
-    if (product_sum > best_sum_of_products) {
-      best_factor <- factor_name
-      best_sum_of_products <- product_sum
-    }
-  }
-  
-  # Store the highest sum of products for each factor
-  if (!(best_factor %in% names(highest_sums)) || best_sum_of_products > highest_sums[[best_factor]]) {
-    highest_sums[[best_factor]] <- best_sum_of_products
-  }
-  
-  # Append the assignment to the corresponding factor's list
-  if (!(best_factor %in% names(assignments_list))) {
-    assignments_list[[best_factor]] <- character(0)
-  }
-  assignments_list[[best_factor]] <- c(assignments_list[[best_factor]], var_name)
-}
-
-# Combine assignments into the final CFA model specification with adjusted coefficients
-cfa2.testfit.model <- sapply(names(assignments_list), function(factor_name) {
-  factor_assignments <- assignments_list[[factor_name]]
-  highest_sum <- highest_sums[[factor_name]]
-  
-  # Divide each variable's best_sum_of_products by the highest and format the assignment
-  adjusted_assignments <- sapply(factor_assignments, function(var_name) {
-    sum_of_products <- sum(data_exc[, var_name] * dd.cbfa.fscores_nog[, factor_name])
-    coefficient <- round(sum_of_products / highest_sum, 2)
-    paste(coefficient, "*", var_name)
-  })
-  
-  paste(factor_name, "=~", paste(adjusted_assignments, collapse = " + "))
-})
-
-# Print the final CFA model specification
-cat(paste(cfa2.testfit.model, collapse = "\n"))
-```
-
-# RDoC
+# RDoC internal validation model
 ```{r, fig.height = 8, fig.width = 8}
 # Initialize a list to store assignments for each factor
 assignments_list <- list()
@@ -488,65 +152,6 @@ rdoc.testfit.model <- sapply(names(assignments_list), function(factor_name) {
 # Print the final CFA model specification
 cat(paste(rdoc.testfit.model, collapse = "\n"))
 ```
-```{r, fig.height = 8, fig.width = 8}
-# Initialize a list to store assignments for each factor
-assignments_list <- list()
-
-# Initialize a list to store the highest sum of products for each factor
-highest_sums <- list()
-
-# Loop through each variable in data_exc
-for (var_name in colnames(data_exc)) {
-  # Initialize variables to keep track of the best factor and its sum of products
-  best_factor <- NULL
-  best_sum_of_products <- -Inf
-
-  # Calculate the sums of products for each factor
-  for (i in 1:length(colnames(rdoc.cfa.fscores))) {
-    factor_name <- colnames(rdoc.cfa.fscores)[i]
-    product_sum <- sum(data_exc[, var_name] * rdoc.cfa.fscores[, factor_name])
-    
-    # Check if this factor has a higher sum of products
-    if (product_sum > best_sum_of_products) {
-      best_factor <- factor_name
-      best_sum_of_products <- product_sum
-    }
-  }
-  
-  # Store the highest sum of products for each factor
-  if (!(best_factor %in% names(highest_sums)) || best_sum_of_products > highest_sums[[best_factor]]) {
-    highest_sums[[best_factor]] <- best_sum_of_products
-  }
-  
-  # Append the assignment to the corresponding factor's list
-  if (!(best_factor %in% names(assignments_list))) {
-    assignments_list[[best_factor]] <- character(0)
-  }
-  assignments_list[[best_factor]] <- c(assignments_list[[best_factor]], var_name)
-}
-
-# Combine assignments into the final CFA model specification with adjusted coefficients
-rdoc2.testfit.model <- sapply(names(assignments_list), function(factor_name) {
-  factor_assignments <- assignments_list[[factor_name]]
-  highest_sum <- highest_sums[[factor_name]]
-  
-  # Divide each variable's best_sum_of_products by the highest and format the assignment
-  adjusted_assignments <- sapply(factor_assignments, function(var_name) {
-    sum_of_products <- sum(data_exc[, var_name] * rdoc.cfa.fscores[, factor_name])
-    coefficient <- round(sum_of_products / highest_sum, 2)
-    paste(coefficient, "*", var_name)
-  })
-  
-  paste(factor_name, "=~", paste(adjusted_assignments, collapse = " + "))
-})
-
-all_variables <- colnames(data_exc)
-g_definition <- paste("g =~", paste(all_variables, collapse = " + "))
-rdoc2.testfit.model <- c(g_definition, rdoc2.testfit.model)
-
-# Print the final CFA model specification
-cat(paste(rdoc2.testfit.model, collapse = "\n"))
-```
 
 ```{r, fig.height = 10, fig.width = 10}
 cfa.testfit = cfa(cfa.testfit.model, data_exc, estimator = "MLR", std.lv = TRUE, orthogonal = TRUE, check.gradient = FALSE)
@@ -562,6 +167,8 @@ plot = heatmap.2(data.matrix(cfa.testfit.loadings), dendrogram = c("none"), Rowv
 
 lavInspect(cfa.testfit, "cov.lv")
 ```
+
+Rerun cfa.testfit with some variable's variance set to 0 as estimated ov variances are negative
 ```{r, fig.height = 10, fig.width = 10}
 cfa.testfit.model <- c(cfa.testfit.model, "CSP44657 ~~ 0*CSP44657", "CSCC9996 ~~ 0*CSCC9996", "SPSC110105 ~~ 0*SPSC110105", "CSCC453 ~~ 0*CSCC453")
 
@@ -584,47 +191,6 @@ cfa.testfit.srmr = fitMeasures(cfa.testfit, c("srmr"))
 lavInspect(cfa.testfit, "cov.lv")
 ```
 
-```{r, fig.height = 8, fig.width = 8}
-cfa2.testfit = cfa(cfa2.testfit.model, data_exc, estimator = "MLR", std.lv = TRUE, orthogonal = TRUE, check.gradient = FALSE)
-semPaths(cfa2.testfit, whatLabels = "std", layout="tree", edge.label.cex=1)
-summary(cfa2.testfit, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
-cfa2.testfit.r2 = inspect(cfa2.testfit, 'r2')
-
-cfa2.testfit.loadings = inspect(cfa2.testfit,what="std")$lambda
-cfa2.testfit.loadings = cfa2.testfit.loadings[order(row.names(cfa2.testfit.loadings)), ]
-cfa2.testfit.loadings = cfa2.testfit.loadings[, order(colnames(cfa2.testfit.loadings))]
-# cfa2.testfit.loadings[cfa2.testfit.loadings < .4 & cfa2.testfit.loadings > -.4] <- 0
-plot = heatmap.2(data.matrix(cfa2.testfit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
-
-cfa2.testfit.rmsea = fitMeasures(cfa2.testfit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
-cfa2.testfit.cfi = fitMeasures(cfa2.testfit, c("cfi.robust", "tli.robust", "srmr.robust"))
-cfa2.testfit.tli = fitMeasures(cfa2.testfit, c("tli.robust"))
-cfa2.testfit.aicbic = fitMeasures(cfa2.testfit, c("aic", "bic"))
-
-lavInspect(cfa2.testfit, "cov.lv")
-```
-```{r, fig.height = 8, fig.width = 8}
-cfa2.testfit.model <- c(cfa2.testfit.model, "CSCC453 ~~ 0*CSCC453")
-
-cfa2.testfit = cfa(cfa2.testfit.model, data_exc, estimator = "MLR", std.lv = TRUE, orthogonal = TRUE, check.gradient = FALSE)
-semPaths(cfa2.testfit, whatLabels = "std", layout="tree", edge.label.cex=1)
-summary(cfa2.testfit, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
-cfa2.testfit.r2 = inspect(cfa2.testfit, 'r2')
-
-cfa2.testfit.loadings = inspect(cfa2.testfit,what="std")$lambda
-cfa2.testfit.loadings = cfa2.testfit.loadings[order(row.names(cfa2.testfit.loadings)), ]
-cfa2.testfit.loadings = cfa2.testfit.loadings[, order(colnames(cfa2.testfit.loadings))]
-# cfa2.testfit.loadings[cfa2.testfit.loadings < .4 & cfa2.testfit.loadings > -.4] <- 0
-plot = heatmap.2(data.matrix(cfa2.testfit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
-
-cfa2.testfit.rmsea = fitMeasures(cfa2.testfit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
-cfa2.testfit.cfi = fitMeasures(cfa2.testfit, c("cfi.robust", "tli.robust", "srmr.robust"))
-cfa2.testfit.tli = fitMeasures(cfa2.testfit, c("tli.robust"))
-cfa2.testfit.aicbic = fitMeasures(cfa2.testfit, c("aic", "bic"))
-
-lavInspect(cfa2.testfit, "cov.lv")
-```
-
 ```{r, fig.height = 10, fig.width = 10}
 rdoc.testfit = cfa(rdoc.testfit.model, data_exc, estimator = "MLR", std.lv = TRUE,check.gradient = FALSE)
 semPaths(rdoc.testfit, whatLabels = "std", layout="tree", edge.label.cex=1)
@@ -645,99 +211,21 @@ rdoc.testfit.srmr = fitMeasures(rdoc.testfit, c("srmr"))
 
 lavInspect(rdoc.testfit, "cov.lv")
 ```
-```{r, fig.height = 8, fig.width = 8}
-rdoc2.testfit = cfa(rdoc2.testfit.model, data_exc, estimator = "MLR", std.lv = TRUE,check.gradient = FALSE)
-semPaths(rdoc2.testfit, whatLabels = "std", layout="tree", edge.label.cex=1)
-summary(rdoc2.testfit, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
-rdoc2.testfit.r2 = inspect(rdoc2.testfit, 'r2')
-
-rdoc2.testfit.loadings = inspect(rdoc2.testfit,what="std")$lambda
-rdoc2.testfit.loadings = rdoc2.testfit.loadings[order(row.names(rdoc2.testfit.loadings)), ]
-rdoc2.testfit.loadings = rdoc2.testfit.loadings[, order(colnames(rdoc2.testfit.loadings))]
-# rdoc2.testfit.loadings[rdoc2.testfit.loadings < .4 & rdoc2.testfit.loadings > -.4] <- 0
-plot = heatmap.2(data.matrix(rdoc2.testfit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
-```
-```{r, fig.height = 8, fig.width = 8}
-rdoc2.testfit.model <- c(rdoc2.testfit.model, "CSP9433 ~~ 0*CSP9433", "CSP2525 ~~ 0*CSP2525", "CSP9832 ~~ 0*CSP9832")
-cat(paste(rdoc2.testfit.model, collapse = "\n"))
-
-rdoc2.testfit = cfa(rdoc2.testfit.model, data_exc, estimator = "MLR", std.lv = TRUE,check.gradient = FALSE)
-semPaths(rdoc2.testfit, whatLabels = "std", layout="tree", edge.label.cex=1)
-summary(rdoc2.testfit, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
-rdoc2.testfit.r2 = inspect(rdoc2.testfit, 'r2')
-
-rdoc2.testfit.loadings = inspect(rdoc2.testfit,what="std")$lambda
-rdoc2.testfit.loadings = rdoc2.testfit.loadings[order(row.names(rdoc2.testfit.loadings)), ]
-rdoc2.testfit.loadings = rdoc2.testfit.loadings[, order(colnames(rdoc2.testfit.loadings))]
-# rdoc2.testfit.loadings[rdoc2.testfit.loadings < .4 & rdoc2.testfit.loadings > -.4] <- 0
-plot = heatmap.2(data.matrix(rdoc2.testfit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
-
-rdoc2.testfit.rmsea = fitMeasures(rdoc2.testfit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
-rdoc2.testfit.cfi = fitMeasures(rdoc2.testfit, c("cfi.robust", "tli.robust", "srmr.robust"))
-rdoc2.testfit.tli = fitMeasures(rdoc2.testfit, c("tli.robust"))
-rdoc2.testfit.aicbic = fitMeasures(rdoc2.testfit, c("aic", "bic"))
-
-lavInspect(rdoc2.testfit, "cov.lv")
-eigenvalues <- eigen(vcov(rdoc2.testfit))$values
-print(eigenvalues)
-```
-
-#change confidence interval of RMSEA
-```{r, fig.height = 8, fig.width = 6}
-library(MBESS)
-#Change CI of RMSEA
-m.cfa.testfit.rmsea = fitmeasures(cfa.testfit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust")) # Get RMSEA and its CI
-m.cfa.testfit.n = lavInspect(cfa.testfit, what = "nobs") # Get N used in model
-m.cfa.testfit.dof = fitmeasures(cfa.testfit, "df") # Get the dof in model
-cfa.testfit.ci.rmsea = ci.rmsea(m.cfa.testfit.rmsea[1], m.cfa.testfit.dof, m.cfa.testfit.n, conf.level=.95) #Gives 95% CI for RMSEA
-
-m.rdoc.testfit.rmsea = fitmeasures(rdoc.testfit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust")) # Get RMSEA and its CI
-m.rdoc.testfit.n = lavInspect(rdoc.testfit, what = "nobs") # Get N used in model
-m.rdoc.testfit.dof = fitmeasures(rdoc.testfit, "df") # Get the dof in model
-rdoc.testfit.ci.rmsea = ci.rmsea(m.rdoc.testfit.rmsea[1], m.rdoc.testfit.dof, m.rdoc.testfit.n, conf.level=.95) #Gives 95% CI for RMSEA
-
-m.cfa2.testfit.rmsea = fitmeasures(cfa2.testfit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust")) # Get RMSEA and its CI
-m.cfa2.testfit.n = lavInspect(cfa2.testfit, what = "nobs") # Get N used in model
-m.cfa2.testfit.dof = fitmeasures(cfa2.testfit, "df") # Get the dof in model
-cfa2.testfit.ci.rmsea = ci.rmsea(m.cfa2.testfit.rmsea[1], m.cfa2.testfit.dof, m.cfa2.testfit.n, conf.level=.95) #Gives 95% CI for RMSEA
-
-m.rdoc2.testfit.rmsea = fitmeasures(rdoc2.testfit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust")) # Get RMSEA and its CI
-m.rdoc2.testfit.n = lavInspect(rdoc2.testfit, what = "nobs") # Get N used in model
-m.rdoc2.testfit.dof = fitmeasures(rdoc2.testfit, "df") # Get the dof in model
-rdoc2.testfit.ci.rmsea = ci.rmsea(m.rdoc2.testfit.rmsea[1], m.rdoc2.testfit.dof, m.rdoc2.testfit.n, conf.level=.95) #Gives 95% CI for RMSEA
-```
 
 #Bootstrap by resampling parcels
 ```{r, fig.height = 8, fig.width = 6}
-# set.seed(5)
-# rdoc.testfit.bs <- bootstrapLavaan(rdoc.testfit, R = 5000, type = "yuan", FUN = function(x) {
-#   fitMeasures(x, fit.measures = c("cfi.robust","tli.robust", "aic", "bic","rmsea.robust","srmr")) })
-# 
-# cfa.testfit.bs <- bootstrapLavaan(cfa.testfit, R = 5000, type = "yuan", FUN = function(x) {
-#   fitMeasures(x, fit.measures = c("cfi.robust","tli.robust", "aic", "bic","rmsea.robust","srmr")) })
-# 
-# save(rdoc.testfit.bs, file = "rdoc.testfit.exc_5kbsyuan.RData")
-# save(cfa.testfit.bs, file = "cfa.testfit.exc_5kbsyuan.RData")
+set.seed(5)
+rdoc.testfit.bs <- bootstrapLavaan(rdoc.testfit, R = 5000, type = "yuan", FUN = function(x) {
+  fitMeasures(x, fit.measures = c("cfi.robust","tli.robust", "aic", "bic","rmsea.robust","srmr")) })
+
+cfa.testfit.bs <- bootstrapLavaan(cfa.testfit, R = 5000, type = "yuan", FUN = function(x) {
+  fitMeasures(x, fit.measures = c("cfi.robust","tli.robust", "aic", "bic","rmsea.robust","srmr")) })
+
+save(rdoc.testfit.bs, file = "rdoc.testfit.exc_5kbsyuan.RData")
+save(cfa.testfit.bs, file = "cfa.testfit.exc_5kbsyuan.RData")
 ```
 
 ```{r, fig.height = 8, fig.width = 6}
-# set.seed(5)
-# rdoc2.testfit.bs <- bootstrapLavaan(rdoc2.testfit, R = 5000, type = "ordinary", FUN = function(x) {
-#   fitMeasures(x, fit.measures = c("cfi.robust","tli.robust", "aic", "bic","rmsea.robust")) })
-# 
-# cfa2.testfit.bs <- bootstrapLavaan(cfa2.testfit, R = 5000, type = "ordinary", FUN = function(x) {
-#   fitMeasures(x, fit.measures = c("cfi.robust","tli.robust", "aic", "bic","rmsea.robust")) })
-# 
-# save(rdoc2.testfit.bs, file = "rdoc2.testfit.exc_5kbs.RData")
-# save(cfa2.testfit.bs, file = "cfa2.testfit.exc_5kbs.RData")
-```
-
-```{r, fig.height = 8, fig.width = 6}
-# load("rdoc.testfit.exc_5kbs.RData")
-# load("cfa.testfit.exc_5kbs.RData")
-load("rdoc.testfit.exc_5kbsyuan.RData")
-load("cfa.testfit.exc_5kbsyuan.RData")
-
 rdoc.testfit.cfi.ci = quantile(rdoc.testfit.bs[, 1], probs = c(.025, .975), na.rm = TRUE)
 rdoc.testfit.tli.ci = quantile(rdoc.testfit.bs[, 2], probs = c(.025, .975), na.rm = TRUE)
 rdoc.testfit.aic.ci = quantile(rdoc.testfit.bs[, 3], probs = c(.025, .975), na.rm = TRUE)
@@ -752,17 +240,12 @@ cfa.testfit.bic.ci = quantile(cfa.testfit.bs[, 4], probs = c(.025, .975), na.rm 
 cfa.testfit.rmsea.ci = quantile(cfa.testfit.bs[, 5], probs = c(.025, .975), na.rm = TRUE)
 cfa.testfit.srmr.ci = quantile(cfa.testfit.bs[, 6], probs = c(.025, .975), na.rm = TRUE)
 
-# rdoc2.testfit.cfi.ci = quantile(rdoc2.testfit.bs[, 1], probs = c(.025, .975), na.rm = TRUE)
-# rdoc2.testfit.tli.ci = quantile(rdoc2.testfit.bs[, 2], probs = c(.025, .975), na.rm = TRUE)
-# rdoc2.testfit.aic.ci = quantile(rdoc2.testfit.bs[, 3], probs = c(.025, .975), na.rm = TRUE)
-# rdoc2.testfit.bic.ci = quantile(rdoc2.testfit.bs[, 4], probs = c(.025, .975), na.rm = TRUE)
-# rdoc2.testfit.rmsea.ci = quantile(rdoc2.testfit.bs[, 5], probs = c(.025, .975), na.rm = TRUE)
-# 
-# cfa2.testfit.cfi.ci = quantile(cfa2.testfit.bs[, 1], probs = c(.025, .975), na.rm = TRUE)
-# cfa2.testfit.tli.ci = quantile(cfa2.testfit.bs[, 2], probs = c(.025, .975), na.rm = TRUE)
-# cfa2.testfit.aic.ci = quantile(cfa2.testfit.bs[, 3], probs = c(.025, .975), na.rm = TRUE)
-# cfa2.testfit.bic.ci = quantile(cfa2.testfit.bs[, 4], probs = c(.025, .975), na.rm = TRUE)
-# cfa2.testfit.rmsea.ci = quantile(cfa2.testfit.bs[, 5], probs = c(.025, .975), na.rm = TRUE)
+hist(rdoc.testfit.bs[, 1])
+hist(rdoc.testfit.bs[, 2])
+hist(rdoc.testfit.bs[, 3])
+hist(rdoc.testfit.bs[, 4])
+hist(rdoc.testfit.bs[, 5])
+hist(rdoc.testfit.bs[, 6])
 
 hist(cfa.testfit.bs[, 1])
 hist(cfa.testfit.bs[, 2])
@@ -775,8 +258,6 @@ hist(cfa.testfit.bs[, 6])
 ```{r, fig.height = 4, fig.width = 4}
 fitdata <- data.frame(Models = c("RDoC", "DD"), 
                    Robust.RMSEA =  c(rdoc.testfit.rmsea[1], cfa.testfit.rmsea[1]), 
-                   errmin = c(rdoc.testfit.ci.rmsea[[1]], cfa.testfit.ci.rmsea[[1]]),
-                   errmax = c(rdoc.testfit.ci.rmsea[[3]], cfa.testfit.ci.rmsea[[3]]), 
                    errmin2 = c(rdoc.testfit.rmsea.ci[[1]], cfa.testfit.rmsea.ci[[1]]),
                    errmax2 = c(rdoc.testfit.rmsea.ci[[2]], cfa.testfit.rmsea.ci[[2]]),
                    Robust.CFI = c(rdoc.testfit.cfi[1], cfa.testfit.cfi[1]),
@@ -791,18 +272,7 @@ fitdata <- data.frame(Models = c("RDoC", "DD"),
                    bic = c(rdoc.testfit.aicbic[2], cfa.testfit.aicbic[2]),
                    bic.errmin = c(rdoc.testfit.bic.ci[[1]], cfa.testfit.bic.ci[[1]]),
                    bic.errmax = c(rdoc.testfit.bic.ci[[2]], cfa.testfit.bic.ci[[2]]),
-                   srmr = c(rdoc.testfit.srmr[1], cfa.testfit.srmr[1]),
-                   srmr.errmin = c(rdoc.testfit.srmr.ci[[1]], cfa.testfit.srmr.ci[[1]]),
-                   srmr.errmax = c(rdoc.testfit.srmr.ci[[2]], cfa.testfit.srmr.ci[[2]])
                    )
-                   
-ggplot(fitdata, aes(x = Models, y = Robust.RMSEA)) +
-  geom_bar(stat='identity', color="black", fill="skyblue", width=0.5) + 
-  geom_errorbar(aes(x = Models, ymin=errmin, ymax=errmax), width=0.4, colour="orange", size=1.3) +
-  scale_y_continuous(expand = expansion(mult = c(0, .1)))+ 
-  ggtitle("Robust RMSEA")+
-  labs(y = "RMSEA") +
-  theme_classic()
 
 ggplot(fitdata, aes(x = Models, y = Robust.RMSEA)) +
   geom_bar(stat='identity', color="black", fill="skyblue", width=0.5) + 
@@ -844,20 +314,13 @@ ggplot(fitdata, aes(x = Models, y = bic)) +
   labs(y = "BIC")+
   theme_classic()
 
-ggplot(fitdata, aes(x = Models, y = srmr)) +
-  geom_bar(stat='identity', color="black", fill="skyblue", width=0.5) + 
-  geom_errorbar(aes(x = Models, ymin=srmr.errmin, ymax=srmr.errmax), width=0.4, colour="orange", size=1.3) +
-  scale_y_continuous(expand = expansion(mult = c(0, .1)))+ 
-  ggtitle("srmr")+
-  labs(y = "srmr")+
-  theme_classic()
-
 save(fitdata, file = "fitdata_testfit_exc.RData")
 fitdata_exc = fitdata
 fitdata_exc[, -1] <- round(fitdata_exc[, -1], 3)
 fitdata_exc[, (ncol(fitdata_exc) - 5):ncol(fitdata_exc)] <- round(fitdata_exc[, (ncol(fitdata_exc) - 5):ncol(fitdata_exc)], 0)
 print(fitdata_exc)
 ```
+
 ```{r, fig.height = 7.5, fig.width = 7.5}
 plot_metric <- function(metric_name, real_metric = NULL, real_metric_name = NULL, title = "") {
   combined_metric <- rbind(
@@ -950,4 +413,3 @@ for (i in 1:5) {
   cat("Significance:", significance, "\n\n")
 }
 ```
-
