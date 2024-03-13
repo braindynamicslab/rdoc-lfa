@@ -1,5 +1,5 @@
 ---
-title: "ShaunRdoc-r01_fullbrain"
+title: "Core model using whole-brain activation maps and External validation using coordinate activation maps"
 author: "Shaun Quah"
 date: "2023-02-07"
 output: html_document
