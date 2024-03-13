@@ -186,7 +186,6 @@ cfa.testfit.rmsea = fitMeasures(cfa.testfit, c("rmsea.robust", "rmsea.ci.lower.r
 cfa.testfit.cfi = fitMeasures(cfa.testfit, c("cfi.robust", "tli.robust", "srmr.robust"))
 cfa.testfit.tli = fitMeasures(cfa.testfit, c("tli.robust"))
 cfa.testfit.aicbic = fitMeasures(cfa.testfit, c("aic", "bic"))
-cfa.testfit.srmr = fitMeasures(cfa.testfit, c("srmr"))
 lavInspect(cfa.testfit, "cov.lv")
 ```
 
@@ -206,7 +205,6 @@ rdoc.testfit.rmsea = fitMeasures(rdoc.testfit, c("rmsea.robust", "rmsea.ci.lower
 rdoc.testfit.cfi = fitMeasures(rdoc.testfit, c("cfi.robust", "tli.robust", "srmr.robust"))
 rdoc.testfit.tli = fitMeasures(rdoc.testfit, c("tli.robust"))
 rdoc.testfit.aicbic = fitMeasures(rdoc.testfit, c("aic", "bic"))
-rdoc.testfit.srmr = fitMeasures(rdoc.testfit, c("srmr"))
 
 lavInspect(rdoc.testfit, "cov.lv")
 ```
@@ -230,14 +228,12 @@ rdoc.testfit.tli.ci = quantile(rdoc.testfit.bs[, 2], probs = c(.025, .975), na.r
 rdoc.testfit.aic.ci = quantile(rdoc.testfit.bs[, 3], probs = c(.025, .975), na.rm = TRUE)
 rdoc.testfit.bic.ci = quantile(rdoc.testfit.bs[, 4], probs = c(.025, .975), na.rm = TRUE)
 rdoc.testfit.rmsea.ci = quantile(rdoc.testfit.bs[, 5], probs = c(.025, .975), na.rm = TRUE)
-rdoc.testfit.srmr.ci = quantile(rdoc.testfit.bs[, 6], probs = c(.025, .975), na.rm = TRUE)
 
 cfa.testfit.cfi.ci = quantile(cfa.testfit.bs[, 1], probs = c(.025, .975), na.rm = TRUE)
 cfa.testfit.tli.ci = quantile(cfa.testfit.bs[, 2], probs = c(.025, .975), na.rm = TRUE)
 cfa.testfit.aic.ci = quantile(cfa.testfit.bs[, 3], probs = c(.025, .975), na.rm = TRUE)
 cfa.testfit.bic.ci = quantile(cfa.testfit.bs[, 4], probs = c(.025, .975), na.rm = TRUE)
 cfa.testfit.rmsea.ci = quantile(cfa.testfit.bs[, 5], probs = c(.025, .975), na.rm = TRUE)
-cfa.testfit.srmr.ci = quantile(cfa.testfit.bs[, 6], probs = c(.025, .975), na.rm = TRUE)
 
 hist(rdoc.testfit.bs[, 1])
 hist(rdoc.testfit.bs[, 2])
@@ -270,7 +266,7 @@ fitdata <- data.frame(Models = c("RDoC", "DD"),
                    aic.errmax = c(rdoc.testfit.aic.ci[[2]], cfa.testfit.aic.ci[[2]]),
                    bic = c(rdoc.testfit.aicbic[2], cfa.testfit.aicbic[2]),
                    bic.errmin = c(rdoc.testfit.bic.ci[[1]], cfa.testfit.bic.ci[[1]]),
-                   bic.errmax = c(rdoc.testfit.bic.ci[[2]], cfa.testfit.bic.ci[[2]]),
+                   bic.errmax = c(rdoc.testfit.bic.ci[[2]], cfa.testfit.bic.ci[[2]])
                    )
 
 ggplot(fitdata, aes(x = Models, y = Robust.RMSEA)) +
