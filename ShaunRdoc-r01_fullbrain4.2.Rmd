@@ -125,14 +125,12 @@ cfa.loadings = cfa.loadings[, order(colnames(cfa.loadings))]
 plot = heatmap.2(data.matrix(cfa.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
 
 dd.cbfa.fscores = lavPredict(cfa.fit, method = "Bartlett")
-write.xlsx(dd.cbfa.fscores, "H:/Shared drives/BDL-Shaun/fscores_DDbifactorcfa.xlsx")
 dd.cbfa.fscorecoef <- inspect(cfa.fit, what = "std")$lambda
 
 cfa.fit.rmsea = fitMeasures(cfa.fit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
 cfa.fit.cfi = fitMeasures(cfa.fit, c("cfi.robust", "tli.robust", "srmr.robust"))
 cfa.fit.tli = fitMeasures(cfa.fit, c("tli.robust"))
 cfa.fit.aicbic = fitMeasures(cfa.fit, c("aic", "bic"))
-cfa.fit.srmr = fitMeasures(cfa.fit, c("srmr"))
 ```
 
 #CFA (not bifactor) based on EFA(F6)
@@ -146,9 +144,6 @@ cfanobi.fit.loadings = inspect(cfanobi.fit,what="std")$lambda
 cfanobi.fit.loadings = cfanobi.fit.loadings[order(row.names(cfanobi.fit.loadings)), ]
 cfanobi.fit.loadings[cfanobi.fit.loadings < .4 & cfanobi.fit.loadings > -.4] <- 0
 heatmap.2(data.matrix(cfanobi.fit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col = colorRampPalette(c("white", "red"))(100))
-
-fscores = lavPredict(cfanobi.fit, method = "Bartlett")
-factor_score_coefficients <- inspect(cfanobi.fit, what = "std")$lambda
 ```
 
 # SPPO4262 variance set to 0 for cfanobi.fit.model as estimated ov variances are negative 
@@ -165,14 +160,10 @@ cfanobi.fit.loadings = cfanobi.fit.loadings[order(row.names(cfanobi.fit.loadings
 cfanobi.fit.loadings[cfanobi.fit.loadings < .4 & cfanobi.fit.loadings > -.4] <- 0
 heatmap.2(data.matrix(cfanobi.fit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col = colorRampPalette(c("white", "red"))(100))
 
-fscores = lavPredict(cfanobi.fit, method = "Bartlett")
-factor_score_coefficients <- inspect(cfanobi.fit, what = "std")$lambda
-
 cfanobi.fit.rmsea = fitMeasures(cfanobi.fit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
 cfanobi.fit.cfi = fitMeasures(cfanobi.fit, c("cfi.robust", "tli.robust", "srmr.robust"))
 cfanobi.fit.tli = fitMeasures(cfanobi.fit, c("tli.robust"))
 cfanobi.fit.aicbic = fitMeasures(cfanobi.fit, c("aic", "bic"))
-cfanobi.fit.srmr = fitMeasures(cfanobi.fit, c("srmr"))
 lavInspect(cfanobi.fit, "cov.lv")
 ```
 
@@ -181,22 +172,19 @@ lavInspect(cfanobi.fit, "cov.lv")
 rdoc.fit = cfa(rdoc.fit.model, data0, estimator = "MLR", std.lv = TRUE) 
 semPaths(rdoc.fit, whatLabels = "std", layout="tree", edge.label.cex=1)
 summary(rdoc.fit, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
+
 rdoc.fit.rmsea = fitMeasures(rdoc.fit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
 rdoc.fit.cfi = fitMeasures(rdoc.fit, c("cfi.robust", "tli.robust", "srmr.robust"))
 rdoc.fit.tli = fitMeasures(rdoc.fit, c("tli.robust"))
 rdoc.fit.r2 = inspect(rdoc.fit, 'r2')
 rdoc.fit.aicbic = fitMeasures(rdoc.fit, c("aic", "bic"))
-rdoc.fit.srmr = fitMeasures(rdoc.fit, c("srmr"))
 
 rdoc.loadings = inspect(rdoc.fit,what="std")$lambda
 rdoc.loadings <- rdoc.loadings[order(row.names(rdoc.loadings)), ]
-# rdoc.loadings[rdoc.loadings < .4 & rdoc.loadings > -.4] <- 0
 heatmap.2(data.matrix(rdoc.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
 
 rdoc.cfa.fscores = lavPredict(rdoc.fit, method = "Bartlett")
-write.xlsx(rdoc.cfa.fscores, "H:/Shared drives/BDL-Shaun/fscores_rdoccfa.xlsx")
 rdoc.cfa.fscorecoef <- inspect(rdoc.fit, what = "std")$lambda
-
 lavInspect(rdoc.fit, "cov.lv")
 ```
 
@@ -208,7 +196,6 @@ summary(rdocbi.fit, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
 
 loadings = inspect(rdocbi.fit,what="std")$lambda
 loadings <- loadings[order(row.names(loadings)), ]
-#loadings[loadings < .4 & loadings > -.4] <- 0
 heatmap.2(data.matrix(loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
 lavInspect(rdocbi.fit, "cov.lv")
 rdocbi.loadings = loadings
@@ -221,16 +208,15 @@ rdocbi.fit.model <- c(rdocbi.fit.model, "NVL982 ~~ 0*NVL982", "PVRR724 ~~ 0*PVRR
 rdocbi.fit = cfa(rdocbi.fit.model, data0, estimator = "MLR", orthogonal = TRUE, std.lv = TRUE)
 semPaths(rdocbi.fit, whatLabels = "std", layout="tree", edge.label.cex=1)
 summary(rdocbi.fit, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
+
 rdocbi.fit.rmsea = fitMeasures(rdocbi.fit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
 rdocbi.fit.cfi = fitMeasures(rdocbi.fit, c("cfi.robust", "tli.robust", "srmr.robust"))
 rdocbi.fit.tli = fitMeasures(rdocbi.fit, c("tli.robust"))
 rdocbi.fit.r2 = inspect(rdocbi.fit, 'r2')
 rdocbi.fit.aicbic = fitMeasures(rdocbi.fit, c("aic", "bic"))
-rdocbi.fit.srmr = fitMeasures(rdocbi.fit, c("srmr"))
 
 loadings = inspect(rdocbi.fit,what="std")$lambda
 loadings <- loadings[order(row.names(loadings)), ]
-#loadings[loadings < .4 & loadings > -.4] <- 0
 heatmap.2(data.matrix(loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
 lavInspect(rdocbi.fit, "cov.lv")
 rdocbi.loadings = loadings
@@ -610,6 +596,14 @@ cat(paste(rdoc.testfit.model, collapse = "\n"))
 ```
 
 ```{r, fig.height = 8, fig.width = 8}
+cfa.testfit = cfa(cfa.testfit.model, data_ns, estimator = "MLR", std.lv = TRUE, check.gradient = FALSE)
+semPaths(cfa.testfit, whatLabels = "std", layout="tree", edge.label.cex=1)
+summary(cfa.testfit, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
+cfa.testfit.r2 = inspect(cfa.testfit, 'r2')
+```
+
+remove variables with negative ov variances
+```{r, fig.height = 8, fig.width = 8}
 cfa.testfit.model <- c(cfa.testfit.model, "CSWM_working_memory_maintenance_working_memory_capacity ~~ 0*CSWM_working_memory_maintenance_working_memory_capacity", "CSDM_memory ~~ 0*CSDM_memory")
 
 cfa.testfit = cfa(cfa.testfit.model, data_ns, estimator = "MLR", std.lv = TRUE, check.gradient = FALSE)
@@ -620,15 +614,20 @@ cfa.testfit.r2 = inspect(cfa.testfit, 'r2')
 cfa.testfit.loadings = inspect(cfa.testfit,what="std")$lambda
 cfa.testfit.loadings = cfa.testfit.loadings[order(row.names(cfa.testfit.loadings)), ]
 cfa.testfit.loadings = cfa.testfit.loadings[, order(colnames(cfa.testfit.loadings))]
-# cfa.testfit.loadings[cfa.testfit.loadings < .4 & cfa.testfit.loadings > -.4] <- 0
 plot = heatmap.2(data.matrix(cfa.testfit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col = colorRampPalette(c("white", "red"))(100))
 
 cfa.testfit.rmsea = fitMeasures(cfa.testfit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
 cfa.testfit.cfi = fitMeasures(cfa.testfit, c("cfi.robust", "tli.robust", "srmr.robust"))
 cfa.testfit.tli = fitMeasures(cfa.testfit, c("tli.robust"))
 cfa.testfit.aicbic = fitMeasures(cfa.testfit, c("aic", "bic"))
-cfa.testfit.srmr = fitMeasures(cfa.testfit, c("srmr"))
 lavInspect(cfa.testfit, "cov.lv")
+```
+
+```{r, fig.height = 8, fig.width = 8}
+rdoc.testfit = cfa(rdoc.testfit.model, data_ns, estimator = "MLR", std.lv = TRUE,check.gradient = FALSE)
+semPaths(rdoc.testfit, whatLabels = "std", layout="tree", edge.label.cex=1)
+summary(rdoc.testfit, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
+rdoc.testfit.r2 = inspect(rdoc.testfit, 'r2')
 ```
 
 ```{r, fig.height = 8, fig.width = 8}
@@ -642,14 +641,12 @@ rdoc.testfit.r2 = inspect(rdoc.testfit, 'r2')
 rdoc.testfit.loadings = inspect(rdoc.testfit,what="std")$lambda
 rdoc.testfit.loadings = rdoc.testfit.loadings[order(row.names(rdoc.testfit.loadings)), ]
 rdoc.testfit.loadings = rdoc.testfit.loadings[, order(colnames(rdoc.testfit.loadings))]
-# rdoc.testfit.loadings[rdoc.testfit.loadings < .4 & rdoc.testfit.loadings > -.4] <- 0
 plot = heatmap.2(data.matrix(rdoc.testfit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
 
 rdoc.testfit.rmsea = fitMeasures(rdoc.testfit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
 rdoc.testfit.cfi = fitMeasures(rdoc.testfit, c("cfi.robust", "tli.robust", "srmr.robust"))
 rdoc.testfit.tli = fitMeasures(rdoc.testfit, c("tli.robust"))
 rdoc.testfit.aicbic = fitMeasures(rdoc.testfit, c("aic", "bic"))
-rdoc.testfit.srmr = fitMeasures(rdoc.testfit, c("srmr"))
 lavInspect(rdoc.testfit, "cov.lv")
 ```
 
@@ -667,6 +664,7 @@ save(cfa.testfit.bs, file = "cfa42.testfit.ns_5kbsyuan.RData")
 ```
 
 ```{r, fig.height = 3, fig.width = 3}
+#removal of nonadmissible solutions
 rdoc.testfit.bs <- rdoc.testfit.bs[rdoc.testfit.bs[, 1] < 1, ]
 rdoc.testfit.bs <- rdoc.testfit.bs[!(rdoc.testfit.bs[, 2] < 0 | rdoc.testfit.bs[, 2] > 1), ]
 rdoc.testfit.bs <- rdoc.testfit.bs[rdoc.testfit.bs[, 5] > 0, ]
@@ -708,10 +706,7 @@ fitdata <- data.frame(Models = c("RDoC", "DD"),
                    aic.errmax = c(rdoc.testfit.aic.ci[[2]], cfa.testfit.aic.ci[[2]]),
                    bic = c(rdoc.testfit.aicbic[2], cfa.testfit.aicbic[2]),
                    bic.errmin = c(rdoc.testfit.bic.ci[[1]], cfa.testfit.bic.ci[[1]]),
-                   bic.errmax = c(rdoc.testfit.bic.ci[[2]], cfa.testfit.bic.ci[[2]]),
-                   srmr = c(rdoc.testfit.srmr[1], cfa.testfit.srmr[1]),
-                   srmr.errmin = c(rdoc.testfit.srmr.ci[[1]], cfa.testfit.srmr.ci[[1]]),
-                   srmr.errmax = c(rdoc.testfit.srmr.ci[[2]], cfa.testfit.srmr.ci[[2]])
+                   bic.errmax = c(rdoc.testfit.bic.ci[[2]], cfa.testfit.bic.ci[[2]])
                    )
                    
 ggplot(fitdata, aes(x = Models, y = Robust.RMSEA)) +
@@ -752,14 +747,6 @@ ggplot(fitdata, aes(x = Models, y = bic)) +
   scale_y_continuous(expand = expansion(mult = c(0, .1)))+ 
   ggtitle("BIC")+
   labs(y = "BIC")+
-  theme_classic()
-
-ggplot(fitdata, aes(x = Models, y = srmr)) +
-  geom_bar(stat='identity', color="black", fill="skyblue", width=0.5) + 
-  geom_errorbar(aes(x = Models, ymin=srmr.errmin, ymax=srmr.errmax), width=0.4, colour="orange", linewidth=1.3) +
-  scale_y_continuous(expand = expansion(mult = c(0, .1)))+ 
-  ggtitle("srmr")+
-  labs(y = "srmr")+
   theme_classic()
 
 save(fitdata, file = "fitdata_nstestfit.RData")
