@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Internal validation using whole-brain activation maps (run RDoC_pt1 first for some required variables)"
 author: "Shaun Quah"
 date: "2023-10-06"
 output: html_document
