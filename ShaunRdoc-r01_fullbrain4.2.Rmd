@@ -36,7 +36,7 @@ heatmap.2(data.matrix(correlation_matrix), dendrogram = c("none"), Rowv = NA, Co
 ```
 
 ```{r, fig.height = 8, fig.width = 8}
-data_ns <- import('Dataset Maps.xlsx',sheet='Coordinated Maps')
+data_ns <- import('Dataset Maps.xlsx',sheet='Coordinate Maps')
 
 columns_to_remove <- c("PVSRR_anticipation","PVSRL_probability","PVSRV_delay","CSP_visual", "CSP_auditory","CSP_somatosensory","CSCC_representation","CSCC_monitoring","CSCC_performance","CSWM_flexible","CSWM_capacity","SPMSU_mental_state","SSMA_planning","SSMA_selection","SSMA_dynamic","SSMA_sensory_action", "ARCRSW_circadian_sleep_wakefulness")
 data_ns <- data_ns[, !(names(data_ns) %in% columns_to_remove)]
