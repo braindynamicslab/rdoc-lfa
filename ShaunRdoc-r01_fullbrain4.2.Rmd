@@ -299,7 +299,7 @@ fitdata <- data.frame(Models = c("RDoC", "RDoC (bifactor)", "DD (bifactor)", "DD
                    aic.errmax = c(rdoc.aic.ci[[2]], rdocbi.aic.ci[[2]], cfa.aic.ci[[2]], cfanobi.aic.ci[[2]]),
                    bic = c(rdoc.fit.aicbic[2], rdocbi.fit.aicbic[2], cfa.fit.aicbic[2], cfanobi.fit.aicbic[2]),
                    bic.errmin = c(rdoc.bic.ci[[1]], rdocbi.bic.ci[[1]], cfa.bic.ci[[1]], cfanobi.bic.ci[[1]]),
-                   bic.errmax = c(rdoc.bic.ci[[2]], rdocbi.bic.ci[[2]], cfa.bic.ci[[2]], cfanobi.bic.ci[[2]]),
+                   bic.errmax = c(rdoc.bic.ci[[2]], rdocbi.bic.ci[[2]], cfa.bic.ci[[2]], cfanobi.bic.ci[[2]])
                    )
                    
 ggplot(fitdata, aes(x = Models, y = Robust.RMSEA)) +
