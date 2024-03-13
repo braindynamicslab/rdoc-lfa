@@ -43,7 +43,7 @@ data_ns <- data_ns[, !(names(data_ns) %in% columns_to_remove)]
 
 data_ns[] <- lapply(data_ns, as.numeric)
 data_ns <- apply(data_ns, 2, scale) 
-```{r, fig.height = 8, fig.width = 8}
+```
 
 ```{r, fig.height = 8, fig.width = 8}
 EFA.fit <- fa(data0, nfactors=8, rotate="oblimin", fm="pa")
