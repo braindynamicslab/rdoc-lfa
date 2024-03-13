@@ -161,7 +161,6 @@ cfa.testfit.r2 = inspect(cfa.testfit, 'r2')
 cfa.testfit.loadings = inspect(cfa.testfit,what="std")$lambda
 cfa.testfit.loadings = cfa.testfit.loadings[order(row.names(cfa.testfit.loadings)), ]
 cfa.testfit.loadings = cfa.testfit.loadings[, order(colnames(cfa.testfit.loadings))]
-# cfa.testfit.loadings[cfa.testfit.loadings < .4 & cfa.testfit.loadings > -.4] <- 0
 plot = heatmap.2(data.matrix(cfa.testfit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
 
 lavInspect(cfa.testfit, "cov.lv")
@@ -179,7 +178,6 @@ cfa.testfit.r2 = inspect(cfa.testfit, 'r2')
 cfa.testfit.loadings = inspect(cfa.testfit,what="std")$lambda
 cfa.testfit.loadings = cfa.testfit.loadings[order(row.names(cfa.testfit.loadings)), ]
 cfa.testfit.loadings = cfa.testfit.loadings[, order(colnames(cfa.testfit.loadings))]
-# cfa.testfit.loadings[cfa.testfit.loadings < .4 & cfa.testfit.loadings > -.4] <- 0
 plot = heatmap.2(data.matrix(cfa.testfit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
 
 cfa.testfit.rmsea = fitMeasures(cfa.testfit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
@@ -198,7 +196,6 @@ rdoc.testfit.r2 = inspect(rdoc.testfit, 'r2')
 rdoc.testfit.loadings = inspect(rdoc.testfit,what="std")$lambda
 rdoc.testfit.loadings = rdoc.testfit.loadings[order(row.names(rdoc.testfit.loadings)), ]
 rdoc.testfit.loadings = rdoc.testfit.loadings[, order(colnames(rdoc.testfit.loadings))]
-# rdoc.testfit.loadings[rdoc.testfit.loadings < .4 & rdoc.testfit.loadings > -.4] <- 0
 plot = heatmap.2(data.matrix(rdoc.testfit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col = colorRampPalette(c("white", "red"))(100))
 
 rdoc.testfit.rmsea = fitMeasures(rdoc.testfit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
