@@ -692,7 +692,7 @@ cfa.testfit.srmr.ci = quantile(cfa.testfit.bs[, 6], probs = c(.025, .975), na.rm
   
 ```{r, fig.height = 4, fig.width = 4}
 fitdata <- data.frame(Models = c("RDoC", "DD"), 
-                   Robust.RMSEA =  c(m.rdoc.testfit.rmsea[1], m.cfa.testfit.rmsea[1]),                
+                   Robust.RMSEA =  c(rdoc.testfit.rmsea[1], cfa.testfit.rmsea[1]),                
                    errmin2 = c(rdoc.testfit.rmsea.ci[[1]], cfa.testfit.rmsea.ci[[1]]), 
                    errmax2 = c(rdoc.testfit.rmsea.ci[[2]], cfa.testfit.rmsea.ci[[2]]),
                    Robust.CFI = c(rdoc.testfit.cfi[1], cfa.testfit.cfi[1]),
