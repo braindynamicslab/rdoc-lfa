@@ -37,6 +37,16 @@ heatmap.2(data.matrix(correlation_matrix), dendrogram = c("none"), Rowv = NA, Co
 ```
 
 ```{r, fig.height = 8, fig.width = 8}
+data_ns <- import('RDoCseedmaps_fullbrain.xlsx',sheet='Avg347_smoothedthresholded')
+
+columns_to_remove <- c("PVSRR_anticipation","PVSRL_probability","PVSRV_delay","CSP_visual", "CSP_auditory","CSP_somatosensory","CSCC_representation","CSCC_monitoring","CSCC_performance","CSWM_flexible","CSWM_capacity","SPMSU_mental_state","SSMA_planning","SSMA_selection","SSMA_dynamic","SSMA_sensory_action", "ARCRSW_circadian_sleep_wakefulness")
+data_ns <- data_ns[, !(names(data_ns) %in% columns_to_remove)]
+
+data_ns[] <- lapply(data_ns, as.numeric)
+data_ns <- apply(data_ns, 2, scale) 
+```{r, fig.height = 8, fig.width = 8}
+
+```{r, fig.height = 8, fig.width = 8}
 EFA.fit <- fa(data0, nfactors=8, rotate="oblimin", fm="pa")
 fa.diagram(EFA.fit)
 print(EFA.fit,sort=TRUE)
