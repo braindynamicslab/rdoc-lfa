@@ -494,15 +494,15 @@ highest_sums <- list()
 for (var_name in colnames(data_ns)) {
   # Initialize variables to keep track of the best factor and its sum of products
   best_factor <- NULL
-  best_sum_of_products <- -Inf
+  best_sum_of_products <- 0
 
   # Calculate the sums of products for each factor
   for (i in 1:length(colnames(dd.cbfa.fscores_nog))) {
     factor_name <- colnames(dd.cbfa.fscores_nog)[i]
     product_sum <- sum(data_ns[, var_name] * dd.cbfa.fscores_nog[, factor_name])
-    
+
     # Check if this factor has a higher sum of products
-    if (product_sum > best_sum_of_products) {
+    if (abs(product_sum) > abs(best_sum_of_products)) {
       best_factor <- factor_name
       best_sum_of_products <- product_sum
     }
@@ -538,6 +538,18 @@ cfa.testfit.model <- sapply(names(assignments_list), function(factor_name) {
 # Print the final CFA model specification
 cat(paste(cfa.testfit.model, collapse = "\n"))
 ```
+```{r, fig.height = 8, fig.width = 8}
+# Calculate the general factor 'g' as the sum of all other factors
+all_variables <- colnames(data_ns)
+g_definition <- paste("g =~", paste(all_variables, collapse = " + "))
+
+# Include the general factor in the CFA model specification
+cfa.testfit2.model <- c(g_definition, cfa.testfit.model)
+cfa.testfit2.model <- paste(cfa.testfit2.model, collapse = "\n")
+
+# Print the complete CFA model with the general factor
+cat("cfa.testfit2.model:\n", cfa.testfit2.model, "\n\n")
+```
 
 ```{r, fig.height = 8, fig.width = 8}
 # Initialize a list to store assignments for each factor
@@ -550,7 +562,7 @@ highest_sums <- list()
 for (var_name in colnames(data_ns)) {
   # Initialize variables to keep track of the best factor and its sum of products
   best_factor <- NULL
-  best_sum_of_products <- -Inf
+   best_sum_of_products <- 0
 
   # Calculate the sums of products for each factor
   for (i in 1:length(colnames(rdoc.cfa.fscores))) {
@@ -558,12 +570,12 @@ for (var_name in colnames(data_ns)) {
     product_sum <- sum(data_ns[, var_name] * rdoc.cfa.fscores[, factor_name])
     
     # Check if this factor has a higher sum of products
-    if (product_sum > best_sum_of_products) {
+    if (abs(product_sum) > abs(best_sum_of_products)) {
       best_factor <- factor_name
       best_sum_of_products <- product_sum
     }
-  }
-  
+  }  
+
   # Store the highest sum of products for each factor
   if (!(best_factor %in% names(highest_sums)) || best_sum_of_products > highest_sums[[best_factor]]) {
     highest_sums[[best_factor]] <- best_sum_of_products
@@ -596,6 +608,15 @@ cat(paste(rdoc.testfit.model, collapse = "\n"))
 ```
 
 ```{r, fig.height = 8, fig.width = 8}
+# Include the general factor in the CFA model specification
+rdoc.testfit2.model <- c(g_definition, rdoc.testfit.model)
+rdoc.testfit2.model <- paste(rdoc.testfit2.model, collapse = "\n")
+
+# Print the complete CFA model with the general factor
+cat("rdoc.testfit2.model:\n", rdoc.testfit2.model, "\n\n")
+```
+
+```{r, fig.height = 8, fig.width = 8}
 cfa.testfit = cfa(cfa.testfit.model, data_ns, estimator = "MLR", std.lv = TRUE, check.gradient = FALSE)
 semPaths(cfa.testfit, whatLabels = "std", layout="tree", edge.label.cex=1)
 summary(cfa.testfit, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
@@ -604,7 +625,7 @@ cfa.testfit.r2 = inspect(cfa.testfit, 'r2')
 
 remove variables with negative ov variances
 ```{r, fig.height = 8, fig.width = 8}
-cfa.testfit.model <- c(cfa.testfit.model, "CSWM_working_memory_maintenance_working_memory_capacity ~~ 0*CSWM_working_memory_maintenance_working_memory_capacity", "CSDM_memory ~~ 0*CSDM_memory")
+cfa.testfit.model <- c(cfa.testfit.model, "CSWM_working_memory_maintenance_working_memory_capacity ~~ 0*CSWM_working_memory_maintenance_working_memory_capacity")
 
 cfa.testfit = cfa(cfa.testfit.model, data_ns, estimator = "MLR", std.lv = TRUE, check.gradient = FALSE)
 semPaths(cfa.testfit, whatLabels = "std", layout="tree", edge.label.cex=1)
@@ -614,7 +635,7 @@ cfa.testfit.r2 = inspect(cfa.testfit, 'r2')
 cfa.testfit.loadings = inspect(cfa.testfit,what="std")$lambda
 cfa.testfit.loadings = cfa.testfit.loadings[order(row.names(cfa.testfit.loadings)), ]
 cfa.testfit.loadings = cfa.testfit.loadings[, order(colnames(cfa.testfit.loadings))]
-plot = heatmap.2(data.matrix(cfa.testfit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col = colorRampPalette(c("white", "red"))(100))
+plot = heatmap.2(data.matrix(cfa.testfit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
 
 cfa.testfit.rmsea = fitMeasures(cfa.testfit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
 cfa.testfit.cfi = fitMeasures(cfa.testfit, c("cfi.robust", "tli.robust", "srmr.robust"))
@@ -631,7 +652,7 @@ rdoc.testfit.r2 = inspect(rdoc.testfit, 'r2')
 ```
 
 ```{r, fig.height = 8, fig.width = 8}
-rdoc.testfit.model <- c(rdoc.testfit.model, "CSP_visual_perception  ~~ 0*CSP_visual_perception ", "CSCC_response_selection  ~~ 0*CSCC_response_selection ")
+rdoc.testfit.model <- c(rdoc.testfit.model, "CSCC_response_selection  ~~ 0*CSCC_response_selection", "SPAP_animacy  ~~ 0*SPAP_animacy")
 
 rdoc.testfit = cfa(rdoc.testfit.model, data_ns, estimator = "MLR", std.lv = TRUE,check.gradient = FALSE)
 semPaths(rdoc.testfit, whatLabels = "std", layout="tree", edge.label.cex=1)
@@ -653,41 +674,65 @@ lavInspect(rdoc.testfit, "cov.lv")
 #Bootstrap by resampling parcels
 ```{r, fig.height = 8, fig.width = 6}
 set.seed(5)
-rdoc.testfit.bs <- bootstrapLavaan(rdoc.testfit, R = 5000, type = "yuan", FUN = function(x) {
-  fitMeasures(x, fit.measures = c("cfi.robust","tli.robust", "aic", "bic","rmsea.robust","srmr")) })
-
 cfa.testfit.bs <- bootstrapLavaan(cfa.testfit, R = 5000, type = "yuan", FUN = function(x) {
   fitMeasures(x, fit.measures = c("cfi.robust","tli.robust", "aic", "bic","rmsea.robust","srmr")) })
 
-save(rdoc.testfit.bs, file = "rdoc42.testfit.ns_5kbsyuan.RData")
+rdoc.testfit.bs <- bootstrapLavaan(rdoc.testfit, R = 5000, type = "yuan", FUN = function(x) {
+  fitMeasures(x, fit.measures = c("cfi.robust","tli.robust", "aic", "bic","rmsea.robust","srmr")) })
+
 save(cfa.testfit.bs, file = "cfa42.testfit.ns_5kbsyuan.RData")
+save(rdoc.testfit.bs, file = "rdoc42.testfit.ns_5kbsyuan.RData")
 ```
 
 ```{r, fig.height = 3, fig.width = 3}
-#removal of nonadmissible solutions
+remove_outliers <- function(data) {
+  initial_count <- nrow(data)
+  
+  q1 <- apply(data, 2, quantile, 0.25, na.rm = TRUE)
+  q3 <- apply(data, 2, quantile, 0.75, na.rm = TRUE)
+  iqr <- q3 - q1
+  lower_bound <- q1 - 1.5 * iqr
+  upper_bound <- q3 + 1.5 * iqr
+  
+  filtered_data <- data
+  for (i in 1:ncol(data)) {
+    filtered_data <- filtered_data[filtered_data[, i] >= lower_bound[i] & filtered_data[, i] <= upper_bound[i], ]
+  }
+  
+  final_count <- nrow(filtered_data)
+  preserved_percentage <- (final_count / initial_count) * 100
+  
+  cat("Initial number of data points:", initial_count, "\n")
+  cat("Number of data points after removing outliers:", final_count, "\n")
+  cat("Percentage of data preserved:", preserved_percentage, "%\n")
+  
+  return(filtered_data)
+}
+
 rdoc.testfit.bs <- rdoc.testfit.bs[rdoc.testfit.bs[, 1] < 1, ]
 rdoc.testfit.bs <- rdoc.testfit.bs[!(rdoc.testfit.bs[, 2] < 0 | rdoc.testfit.bs[, 2] > 1), ]
 rdoc.testfit.bs <- rdoc.testfit.bs[rdoc.testfit.bs[, 5] > 0, ]
-rdoc.testfit.bs <- rdoc.testfit.bs[rdoc.testfit.bs[, 6] < 1, ]
+
+cfa.testfit.bs <- cfa.testfit.bs[cfa.testfit.bs[, 1] < 1, ]
+cfa.testfit.bs <- cfa.testfit.bs[!(cfa.testfit.bs[, 2] < 0 | cfa.testfit.bs[, 2] > 1), ]
+cfa.testfit.bs <- cfa.testfit.bs[cfa.testfit.bs[, 5] > 0, ]
+
+cfa.testfit.bs <- remove_outliers(cfa.testfit.bs)
+rdoc.testfit.bs <- remove_outliers(rdoc.testfit.bs)
+cfa.testfit2.bs <- remove_outliers(cfa.testfit2.bs)
+rdoc.testfit2.bs <- remove_outliers(rdoc.testfit2.bs)
 
 rdoc.testfit.cfi.ci = quantile(rdoc.testfit.bs[, 1], probs = c(.025, .975), na.rm = TRUE)
 rdoc.testfit.tli.ci = quantile(rdoc.testfit.bs[, 2], probs = c(.025, .975), na.rm = TRUE)
 rdoc.testfit.aic.ci = quantile(rdoc.testfit.bs[, 3], probs = c(.025, .975), na.rm = TRUE)
 rdoc.testfit.bic.ci = quantile(rdoc.testfit.bs[, 4], probs = c(.025, .975), na.rm = TRUE)
 rdoc.testfit.rmsea.ci = quantile(rdoc.testfit.bs[, 5], probs = c(.025, .975), na.rm = TRUE)
-rdoc.testfit.srmr.ci = quantile(rdoc.testfit.bs[, 6], probs = c(.025, .975), na.rm = TRUE)
-
-cfa.testfit.bs <- cfa.testfit.bs[cfa.testfit.bs[, 1] < 1, ]
-cfa.testfit.bs <- cfa.testfit.bs[!(cfa.testfit.bs[, 2] < 0 | cfa.testfit.bs[, 2] > 1), ]
-cfa.testfit.bs <- cfa.testfit.bs[cfa.testfit.bs[, 5] > 0, ]
-cfa.testfit.bs <- cfa.testfit.bs[cfa.testfit.bs[, 6] < 1, ]
 
 cfa.testfit.cfi.ci = quantile(cfa.testfit.bs[, 1], probs = c(.025, .975), na.rm = TRUE)
 cfa.testfit.tli.ci = quantile(cfa.testfit.bs[, 2], probs = c(.025, .975), na.rm = TRUE)
 cfa.testfit.aic.ci = quantile(cfa.testfit.bs[, 3], probs = c(.025, .975), na.rm = TRUE)
 cfa.testfit.bic.ci = quantile(cfa.testfit.bs[, 4], probs = c(.025, .975), na.rm = TRUE)
 cfa.testfit.rmsea.ci = quantile(cfa.testfit.bs[, 5], probs = c(.025, .975), na.rm = TRUE)
-cfa.testfit.srmr.ci = quantile(cfa.testfit.bs[, 6], probs = c(.025, .975), na.rm = TRUE)
 ```
   
 ```{r, fig.height = 4, fig.width = 4}
@@ -760,7 +805,7 @@ print(fitdata_nstestfit)
 plot_metric <- function(metric_name, real_metric = NULL, real_metric_name = NULL, title = "") {
   combined_metric <- rbind(
     data.frame(Model = "RDoC", Metric = rdoc.testfit.bs[, metric_name]),
-    data.frame(Model = "CFA", Metric = cfa.testfit.bs[, metric_name])
+    data.frame(Model = "DD", Metric = cfa.testfit.bs[, metric_name])
   )
   
   p <- ggplot(combined_metric, aes(x = Model, y = Metric, fill = Model)) +
@@ -779,7 +824,7 @@ plot_metric <- function(metric_name, real_metric = NULL, real_metric_name = NULL
   
   if (!is.null(real_metric)) {
     real_metric_df <- data.frame(
-      Model = c("RDoC", "CFA"),
+      Model = c("RDoC", "DD"),
       RealMetric = real_metric
     )
     p <- p + geom_quasirandom(data = real_metric_df, aes(x = Model, y = RealMetric), color = "black", size = 3)
