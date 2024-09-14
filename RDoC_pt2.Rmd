@@ -21,6 +21,8 @@ library(semPlot)
 library(openxlsx)
 library(igraph)
 library(circlize)
+library(ggbeeswarm)
+library(multcomp)
 ```
 
 ```{r, fig.height = 8, fig.width = 8}
@@ -46,7 +48,7 @@ highest_sums <- list()
 for (var_name in colnames(data_exc)) {
   # Initialize variables to keep track of the best factor and its sum of products
   best_factor <- NULL
-  best_sum_of_products <- -Inf
+    best_sum_of_products <- 0
 
   # Calculate the sums of products for each factor
   for (i in 1:length(colnames(dd.cbfa.fscores_nog))) {
@@ -54,7 +56,7 @@ for (var_name in colnames(data_exc)) {
     product_sum <- sum(data_exc[, var_name] * dd.cbfa.fscores_nog[, factor_name])
     
     # Check if this factor has a higher sum of products
-    if (product_sum > best_sum_of_products) {
+    if (abs(product_sum) > abs(best_sum_of_products)) {
       best_factor <- factor_name
       best_sum_of_products <- product_sum
     }
@@ -73,7 +75,7 @@ for (var_name in colnames(data_exc)) {
 }
 
 # Combine assignments into the final CFA model specification with adjusted coefficients
-cfa.testfit.model <- sapply(names(assignments_list), function(factor_name) {
+cfa.testfit2.model <- sapply(names(assignments_list), function(factor_name) {
   factor_assignments <- assignments_list[[factor_name]]
   highest_sum <- highest_sums[[factor_name]]
   
@@ -89,10 +91,11 @@ cfa.testfit.model <- sapply(names(assignments_list), function(factor_name) {
 
 all_variables <- colnames(data_exc)
 g_definition <- paste("g =~", paste(all_variables, collapse = " + "))
-cfa.testfit.model <- c(g_definition, cfa.testfit.model)
+cfa.testfit.model <- c(g_definition, cfa.testfit2.model)
 
 # Print the final CFA model specification
 cat(paste(cfa.testfit.model, collapse = "\n"))
+cat(paste(cfa.testfit2.model, collapse = "\n"))
 ```
 
 # RDoC internal validation model
@@ -107,7 +110,7 @@ highest_sums <- list()
 for (var_name in colnames(data_exc)) {
   # Initialize variables to keep track of the best factor and its sum of products
   best_factor <- NULL
-  best_sum_of_products <- -Inf
+  best_sum_of_products <- 0
 
   # Calculate the sums of products for each factor
   for (i in 1:length(colnames(rdoc.cfa.fscores))) {
@@ -115,7 +118,7 @@ for (var_name in colnames(data_exc)) {
     product_sum <- sum(data_exc[, var_name] * rdoc.cfa.fscores[, factor_name])
     
     # Check if this factor has a higher sum of products
-    if (product_sum > best_sum_of_products) {
+    if (abs(product_sum) > abs(best_sum_of_products)) {
       best_factor <- factor_name
       best_sum_of_products <- product_sum
     }
@@ -150,6 +153,8 @@ rdoc.testfit.model <- sapply(names(assignments_list), function(factor_name) {
 
 # Print the final CFA model specification
 cat(paste(rdoc.testfit.model, collapse = "\n"))
+rdoc.testfit2.model <- c(g_definition, rdoc.testfit.model)
+cat(paste(rdoc.testfit2.model, collapse = "\n"))
 ```
 
 ```{r, fig.height = 10, fig.width = 10}
@@ -157,18 +162,11 @@ cfa.testfit = cfa(cfa.testfit.model, data_exc, estimator = "MLR", std.lv = TRUE,
 semPaths(cfa.testfit, whatLabels = "std", layout="tree", edge.label.cex=1)
 summary(cfa.testfit, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
 cfa.testfit.r2 = inspect(cfa.testfit, 'r2')
-
-cfa.testfit.loadings = inspect(cfa.testfit,what="std")$lambda
-cfa.testfit.loadings = cfa.testfit.loadings[order(row.names(cfa.testfit.loadings)), ]
-cfa.testfit.loadings = cfa.testfit.loadings[, order(colnames(cfa.testfit.loadings))]
-plot = heatmap.2(data.matrix(cfa.testfit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
-
-lavInspect(cfa.testfit, "cov.lv")
 ```
 
 Rerun cfa.testfit with some variable's variance set to 0 as estimated ov variances are negative
 ```{r, fig.height = 10, fig.width = 10}
-cfa.testfit.model <- c(cfa.testfit.model, "CSP44657 ~~ 0*CSP44657", "CSCC9996 ~~ 0*CSCC9996", "SPSC110105 ~~ 0*SPSC110105", "CSCC453 ~~ 0*CSCC453")
+cfa.testfit.model <- c(cfa.testfit.model, "CSDM85718 ~~ 0*CSDM85718", "SPSC110105 ~~ 0*SPSC110105", "CSP44657 ~~ 0*CSP44657")
 
 cfa.testfit = cfa(cfa.testfit.model, data_exc, estimator = "MLR", std.lv = TRUE, orthogonal = TRUE, check.gradient = FALSE)
 semPaths(cfa.testfit, whatLabels = "std", layout="tree", edge.label.cex=1)
@@ -187,8 +185,35 @@ cfa.testfit.aicbic = fitMeasures(cfa.testfit, c("aic", "bic"))
 lavInspect(cfa.testfit, "cov.lv")
 ```
 
+```{r, fig.height = 8, fig.width = 8}
+cfa.testfit2 = cfa(cfa.testfit2.model, data_exc, estimator = "MLR", std.lv = TRUE, check.gradient = FALSE)
+semPaths(cfa.testfit2, whatLabels = "std", layout="tree", edge.label.cex=1)
+summary(cfa.testfit2, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
+```
+
+```{r, fig.height = 8, fig.width = 8}
+cfa.testfit2.model <- c(cfa.testfit2.model, "CSDM85718 ~~ 0*CSDM85718")
+
+cfa.testfit2 = cfa(cfa.testfit2.model, data_exc, estimator = "MLR", std.lv = TRUE, check.gradient = FALSE)
+semPaths(cfa.testfit2, whatLabels = "std", layout="tree", edge.label.cex=1)
+summary(cfa.testfit2, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
+cfa.testfit2.r2 = inspect(cfa.testfit2, 'r2')
+
+cfa.testfit2.loadings = inspect(cfa.testfit2,what="std")$lambda
+cfa.testfit2.loadings = cfa.testfit2.loadings[order(row.names(cfa.testfit2.loadings)), ]
+cfa.testfit2.loadings = cfa.testfit2.loadings[, order(colnames(cfa.testfit2.loadings))]
+plot = heatmap.2(data.matrix(cfa.testfit2.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
+
+cfa.testfit2.rmsea = fitMeasures(cfa.testfit2, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
+cfa.testfit2.cfi = fitMeasures(cfa.testfit2, c("cfi.robust", "tli.robust", "srmr.robust"))
+cfa.testfit2.tli = fitMeasures(cfa.testfit2, c("tli.robust"))
+cfa.testfit2.aicbic = fitMeasures(cfa.testfit2, c("aic", "bic"))
+
+lavInspect(cfa.testfit2, "cov.lv")
+```
+
 ```{r, fig.height = 10, fig.width = 10}
-rdoc.testfit = cfa(rdoc.testfit.model, data_exc, estimator = "MLR", std.lv = TRUE,check.gradient = FALSE)
+rdoc.testfit = cfa(rdoc.testfit.model, data_exc, estimator = "MLR", std.lv = TRUE, check.gradient = FALSE)
 semPaths(rdoc.testfit, whatLabels = "std", layout="tree", edge.label.cex=1)
 summary(rdoc.testfit, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
 rdoc.testfit.r2 = inspect(rdoc.testfit, 'r2')
@@ -196,7 +221,7 @@ rdoc.testfit.r2 = inspect(rdoc.testfit, 'r2')
 rdoc.testfit.loadings = inspect(rdoc.testfit,what="std")$lambda
 rdoc.testfit.loadings = rdoc.testfit.loadings[order(row.names(rdoc.testfit.loadings)), ]
 rdoc.testfit.loadings = rdoc.testfit.loadings[, order(colnames(rdoc.testfit.loadings))]
-plot = heatmap.2(data.matrix(rdoc.testfit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col = colorRampPalette(c("white", "red"))(100))
+plot = heatmap.2(data.matrix(rdoc.testfit.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none", col="bluered")
 
 rdoc.testfit.rmsea = fitMeasures(rdoc.testfit, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
 rdoc.testfit.cfi = fitMeasures(rdoc.testfit, c("cfi.robust", "tli.robust", "srmr.robust"))
@@ -206,107 +231,133 @@ rdoc.testfit.aicbic = fitMeasures(rdoc.testfit, c("aic", "bic"))
 lavInspect(rdoc.testfit, "cov.lv")
 ```
 
+```{r, fig.height = 8, fig.width = 8}
+rdoc.testfit2 = cfa(rdoc.testfit2.model, data_exc, estimator = "MLR", std.lv = TRUE, orthogonal = TRUE, check.gradient = FALSE)
+semPaths(rdoc.testfit2, whatLabels = "std", layout="tree", edge.label.cex=1)
+summary(rdoc.testfit2, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
+rdoc.testfit2.r2 = inspect(rdoc.testfit2, 'r2')
+
+rdoc.testfit2.loadings = inspect(rdoc.testfit2,what="std")$lambda
+rdoc.testfit2.loadings = rdoc.testfit2.loadings[order(row.names(rdoc.testfit2.loadings)), ]
+rdoc.testfit2.loadings = rdoc.testfit2.loadings[, order(colnames(rdoc.testfit2.loadings))]
+# rdoc.testfit2.loadings[rdoc.testfit2.loadings < .4 & rdoc.testfit2.loadings > -.4] <- 0
+plot = heatmap.2(data.matrix(rdoc.testfit2.loadings), dendrogram = c("none"), Rowv = NA, Colv = NA, trace="none",col="bluered")
+
+rdoc.testfit2.rmsea = fitMeasures(rdoc.testfit2, c("rmsea.robust", "rmsea.ci.lower.robust", "rmsea.ci.upper.robust", "rmsea.pvalue.robust", "rmsea"))
+rdoc.testfit2.cfi = fitMeasures(rdoc.testfit2, c("cfi.robust", "tli.robust", "srmr.robust"))
+rdoc.testfit2.tli = fitMeasures(rdoc.testfit2, c("tli.robust"))
+rdoc.testfit2.aicbic = fitMeasures(rdoc.testfit2, c("aic", "bic"))
+```
+
 #Bootstrap by resampling parcels
 ```{r, fig.height = 8, fig.width = 6}
 set.seed(5)
-rdoc.testfit.bs <- bootstrapLavaan(rdoc.testfit, R = 5000, type = "yuan", FUN = function(x) {
-  fitMeasures(x, fit.measures = c("cfi.robust","tli.robust", "aic", "bic","rmsea.robust","srmr")) })
-
 cfa.testfit.bs <- bootstrapLavaan(cfa.testfit, R = 5000, type = "yuan", FUN = function(x) {
   fitMeasures(x, fit.measures = c("cfi.robust","tli.robust", "aic", "bic","rmsea.robust","srmr")) })
 
-save(rdoc.testfit.bs, file = "rdoc.testfit.exc_5kbsyuan.RData")
+cfa.testfit2.bs <- bootstrapLavaan(cfa.testfit2, R = 5000, type = "yuan", FUN = function(x) {
+  fitMeasures(x, fit.measures = c("cfi.robust","tli.robust", "aic", "bic","rmsea.robust","srmr")) })
+
+rdoc.testfit.bs <- bootstrapLavaan(rdoc.testfit, R = 5000, type = "yuan", FUN = function(x) {
+  fitMeasures(x, fit.measures = c("cfi.robust","tli.robust", "aic", "bic","rmsea.robust","srmr")) })
+
+rdoc.testfit2.bs <- bootstrapLavaan(rdoc.testfit2, R = 5000, type = "yuan", FUN = function(x) {
+  fitMeasures(x, fit.measures = c("cfi.robust","tli.robust", "aic", "bic","rmsea.robust","srmr")) })
+
 save(cfa.testfit.bs, file = "cfa.testfit.exc_5kbsyuan.RData")
+save(cfa.testfit2.bs, file = "cfa.testfit2.exc_5kbsyuan.RData")
+save(rdoc.testfit.bs, file = "rdoc.testfit.exc_5kbsyuan.RData")
+save(rdoc.testfit2.bs, file = "rdoc.testfit2.exc_5kbsyuan.RData")
 ```
 
 ```{r, fig.height = 8, fig.width = 6}
-rdoc.testfit.cfi.ci = quantile(rdoc.testfit.bs[, 1], probs = c(.025, .975), na.rm = TRUE)
-rdoc.testfit.tli.ci = quantile(rdoc.testfit.bs[, 2], probs = c(.025, .975), na.rm = TRUE)
-rdoc.testfit.aic.ci = quantile(rdoc.testfit.bs[, 3], probs = c(.025, .975), na.rm = TRUE)
-rdoc.testfit.bic.ci = quantile(rdoc.testfit.bs[, 4], probs = c(.025, .975), na.rm = TRUE)
-rdoc.testfit.rmsea.ci = quantile(rdoc.testfit.bs[, 5], probs = c(.025, .975), na.rm = TRUE)
-
 cfa.testfit.cfi.ci = quantile(cfa.testfit.bs[, 1], probs = c(.025, .975), na.rm = TRUE)
 cfa.testfit.tli.ci = quantile(cfa.testfit.bs[, 2], probs = c(.025, .975), na.rm = TRUE)
 cfa.testfit.aic.ci = quantile(cfa.testfit.bs[, 3], probs = c(.025, .975), na.rm = TRUE)
 cfa.testfit.bic.ci = quantile(cfa.testfit.bs[, 4], probs = c(.025, .975), na.rm = TRUE)
 cfa.testfit.rmsea.ci = quantile(cfa.testfit.bs[, 5], probs = c(.025, .975), na.rm = TRUE)
 
-hist(rdoc.testfit.bs[, 1])
-hist(rdoc.testfit.bs[, 2])
-hist(rdoc.testfit.bs[, 3])
-hist(rdoc.testfit.bs[, 4])
-hist(rdoc.testfit.bs[, 5])
-hist(rdoc.testfit.bs[, 6])
+rdoc.testfit.cfi.ci = quantile(rdoc.testfit.bs[, 1], probs = c(.025, .975), na.rm = TRUE)
+rdoc.testfit.tli.ci = quantile(rdoc.testfit.bs[, 2], probs = c(.025, .975), na.rm = TRUE)
+rdoc.testfit.aic.ci = quantile(rdoc.testfit.bs[, 3], probs = c(.025, .975), na.rm = TRUE)
+rdoc.testfit.bic.ci = quantile(rdoc.testfit.bs[, 4], probs = c(.025, .975), na.rm = TRUE)
+rdoc.testfit.rmsea.ci = quantile(rdoc.testfit.bs[, 5], probs = c(.025, .975), na.rm = TRUE)
 
-hist(cfa.testfit.bs[, 1])
-hist(cfa.testfit.bs[, 2])
-hist(cfa.testfit.bs[, 3])
-hist(cfa.testfit.bs[, 4])
-hist(cfa.testfit.bs[, 5])
-hist(cfa.testfit.bs[, 6])
+cfa.testfit2.cfi.ci = quantile(cfa.testfit2.bs[, 1], probs = c(.025, .975), na.rm = TRUE)
+cfa.testfit2.tli.ci = quantile(cfa.testfit2.bs[, 2], probs = c(.025, .975), na.rm = TRUE)
+cfa.testfit2.aic.ci = quantile(cfa.testfit2.bs[, 3], probs = c(.025, .975), na.rm = TRUE)
+cfa.testfit2.bic.ci = quantile(cfa.testfit2.bs[, 4], probs = c(.025, .975), na.rm = TRUE)
+cfa.testfit2.rmsea.ci = quantile(cfa.testfit2.bs[, 5], probs = c(.025, .975), na.rm = TRUE)
+
+rdoc.testfit2.cfi.ci = quantile(rdoc.testfit2.bs[, 1], probs = c(.025, .975), na.rm = TRUE)
+rdoc.testfit2.tli.ci = quantile(rdoc.testfit2.bs[, 2], probs = c(.025, .975), na.rm = TRUE)
+rdoc.testfit2.aic.ci = quantile(rdoc.testfit2.bs[, 3], probs = c(.025, .975), na.rm = TRUE)
+rdoc.testfit2.bic.ci = quantile(rdoc.testfit2.bs[, 4], probs = c(.025, .975), na.rm = TRUE)
+rdoc.testfit2.rmsea.ci = quantile(rdoc.testfit2.bs[, 5], probs = c(.025, .975), na.rm = TRUE)
 ```
 
 ```{r, fig.height = 4, fig.width = 4}
-fitdata <- data.frame(Models = c("RDoC", "DD"), 
-                   Robust.RMSEA =  c(rdoc.testfit.rmsea[1], cfa.testfit.rmsea[1]), 
-                   errmin2 = c(rdoc.testfit.rmsea.ci[[1]], cfa.testfit.rmsea.ci[[1]]),
-                   errmax2 = c(rdoc.testfit.rmsea.ci[[2]], cfa.testfit.rmsea.ci[[2]]),
-                   Robust.CFI = c(rdoc.testfit.cfi[1], cfa.testfit.cfi[1]),
-                   cfi.errmin = c(rdoc.testfit.cfi.ci[[1]], cfa.testfit.cfi.ci[[1]]), 
-                   cfi.errmax = c(rdoc.testfit.cfi.ci[[2]], cfa.testfit.cfi.ci[[2]]), 
-                   Robust.TLI = c(rdoc.testfit.cfi[2], cfa.testfit.cfi[2]), 
-                   tli.errmin = c(rdoc.testfit.tli.ci[[1]], cfa.testfit.tli.ci[[1]]),
-                   tli.errmax = c(rdoc.testfit.tli.ci[[2]], cfa.testfit.tli.ci[[2]]),
-                   aic = c(rdoc.testfit.aicbic[1], cfa.testfit.aicbic[1]),
-                   aic.errmin = c(rdoc.testfit.aic.ci[[1]], cfa.testfit.aic.ci[[1]]),
-                   aic.errmax = c(rdoc.testfit.aic.ci[[2]], cfa.testfit.aic.ci[[2]]),
-                   bic = c(rdoc.testfit.aicbic[2], cfa.testfit.aicbic[2]),
-                   bic.errmin = c(rdoc.testfit.bic.ci[[1]], cfa.testfit.bic.ci[[1]]),
-                   bic.errmax = c(rdoc.testfit.bic.ci[[2]], cfa.testfit.bic.ci[[2]])
+fitdata <- data.frame(Models = c("RDoC", "DD (bifactor)", "RDoC (bifactor)", "DD"),
+                   Robust.RMSEA =  c(rdoc.testfit.rmsea[1], cfa.testfit.rmsea[1], rdoc.testfit2.rmsea[1], cfa.testfit2.rmsea[1]),
+                   errmin2 = c(rdoc.testfit.rmsea.ci[[1]], cfa.testfit.rmsea.ci[[1]], rdoc.testfit2.rmsea.ci[[1]], cfa.testfit2.rmsea.ci[[1]]),
+                   errmax2 = c(rdoc.testfit.rmsea.ci[[2]], cfa.testfit.rmsea.ci[[2]], rdoc.testfit2.rmsea.ci[[2]], cfa.testfit2.rmsea.ci[[2]]),
+                   Robust.CFI = c(rdoc.testfit.cfi[1], cfa.testfit.cfi[1], rdoc.testfit2.cfi[1], cfa.testfit2.cfi[1]),
+                   cfi.errmin = c(rdoc.testfit.cfi.ci[[1]], cfa.testfit.cfi.ci[[1]], rdoc.testfit2.cfi.ci[[1]], cfa.testfit2.cfi.ci[[1]]),
+                   cfi.errmax = c(rdoc.testfit.cfi.ci[[2]], cfa.testfit.cfi.ci[[2]], rdoc.testfit2.cfi.ci[[2]], cfa.testfit2.cfi.ci[[2]]),
+                   Robust.TLI = c(rdoc.testfit.cfi[2], cfa.testfit.cfi[2], rdoc.testfit2.cfi[2], cfa.testfit2.cfi[2]),
+                   tli.errmin = c(rdoc.testfit.tli.ci[[1]], cfa.testfit.tli.ci[[1]], rdoc.testfit2.tli.ci[[1]], cfa.testfit2.tli.ci[[1]]),
+                   tli.errmax = c(rdoc.testfit.tli.ci[[2]], cfa.testfit.tli.ci[[2]], rdoc.testfit2.tli.ci[[2]], cfa.testfit2.tli.ci[[2]]),
+                   aic = c(rdoc.testfit.aicbic[1], cfa.testfit.aicbic[1], rdoc.testfit2.aicbic[1], cfa.testfit2.aicbic[1]),
+                   aic.errmin = c(rdoc.testfit.aic.ci[[1]], cfa.testfit.aic.ci[[1]], rdoc.testfit2.aic.ci[[1]], cfa.testfit2.aic.ci[[1]]),
+                   aic.errmax = c(rdoc.testfit.aic.ci[[2]], cfa.testfit.aic.ci[[2]], rdoc.testfit2.aic.ci[[2]], cfa.testfit2.aic.ci[[2]]),
+                   bic = c(rdoc.testfit.aicbic[2], cfa.testfit.aicbic[2], rdoc.testfit2.aicbic[2], cfa.testfit2.aicbic[2]),
+                   bic.errmin = c(rdoc.testfit.bic.ci[[1]], cfa.testfit.bic.ci[[1]], rdoc.testfit2.bic.ci[[1]], cfa.testfit2.bic.ci[[1]]),
+                   bic.errmax = c(rdoc.testfit.bic.ci[[2]], cfa.testfit.bic.ci[[2]], rdoc.testfit2.bic.ci[[2]], cfa.testfit2.bic.ci[[2]]),
+                   srmr = c(rdoc.testfit.srmr[1], cfa.testfit.srmr[1], rdoc.testfit.srmr[1], cfa.testfit.srmr[1]),
+                   srmr.errmin = c(rdoc.testfit.srmr.ci[[1]], cfa.testfit.srmr.ci[[1]], rdoc.testfit2.srmr.ci[[1]], cfa.testfit2.srmr.ci[[1]]),
+                   srmr.errmax = c(rdoc.testfit.srmr.ci[[2]], cfa.testfit.srmr.ci[[2]], rdoc.testfit2.srmr.ci[[2]], cfa.testfit2.srmr.ci[[2]])
                    )
 
 ggplot(fitdata, aes(x = Models, y = Robust.RMSEA)) +
-  geom_bar(stat='identity', color="black", fill="skyblue", width=0.5) + 
+  geom_bar(stat='identity', color="black", fill="skyblue", width=0.5) +
   geom_errorbar(aes(x = Models, ymin=errmin2, ymax=errmax2), width=0.4, colour="orange", size=1.3) +
-  scale_y_continuous(expand = expansion(mult = c(0, .1)))+ 
+  scale_y_continuous(expand = expansion(mult = c(0, .1)))+
   ggtitle("Robust RMSEA bootstrap")+
   labs(y = "RMSEA") +
   theme_classic()
 
 ggplot(fitdata, aes(x = Models, y = Robust.CFI)) +
-  geom_bar(stat='identity', color="black", fill="skyblue", width=0.5) + 
+  geom_bar(stat='identity', color="black", fill="skyblue", width=0.5) +
   geom_errorbar(aes(x = Models, ymin=cfi.errmin, ymax=cfi.errmax), width=0.4, colour="orange", size=1.3) +
-  scale_y_continuous(expand = expansion(mult = c(0, .1)))+ 
+  scale_y_continuous(expand = expansion(mult = c(0, .1)))+
   ggtitle("Robust CFI")+
   labs(y = "CFI")+
   theme_classic()
 
 ggplot(fitdata, aes(x = Models, y = Robust.TLI)) +
-  geom_bar(stat='identity', color="black", fill="skyblue", width=0.5) + 
+  geom_bar(stat='identity', color="black", fill="skyblue", width=0.5) +
   geom_errorbar(aes(x = Models, ymin=tli.errmin, ymax=tli.errmax), width=0.4, colour="orange", size=1.3) +
-  scale_y_continuous(expand = expansion(mult = c(0, .1)))+ 
+  scale_y_continuous(expand = expansion(mult = c(0, .1)))+
   ggtitle("Robust TLI")+
   labs(y = "TLI")+
   theme_classic()
 
 ggplot(fitdata, aes(x = Models, y = aic)) +
-  geom_bar(stat='identity', color="black", fill="skyblue", width=0.5) + 
+  geom_bar(stat='identity', color="black", fill="skyblue", width=0.5) +
   geom_errorbar(aes(x = Models, ymin=aic.errmin, ymax=aic.errmax), width=0.4, colour="orange", size=1.3) +
-  scale_y_continuous(expand = expansion(mult = c(0, .1)))+ 
+  scale_y_continuous(expand = expansion(mult = c(0, .1)))+
   ggtitle("AIC")+
   labs(y = "AIC")+
   theme_classic()
 
 ggplot(fitdata, aes(x = Models, y = bic)) +
-  geom_bar(stat='identity', color="black", fill="skyblue", width=0.5) + 
+  geom_bar(stat='identity', color="black", fill="skyblue", width=0.5) +
   geom_errorbar(aes(x = Models, ymin=bic.errmin, ymax=bic.errmax), width=0.4, colour="orange", size=1.3) +
-  scale_y_continuous(expand = expansion(mult = c(0, .1)))+ 
+  scale_y_continuous(expand = expansion(mult = c(0, .1)))+
   ggtitle("BIC")+
   labs(y = "BIC")+
   theme_classic()
 
-save(fitdata, file = "fitdata_testfit_exc.RData")
 fitdata_exc = fitdata
 fitdata_exc[, -1] <- round(fitdata_exc[, -1], 3)
 fitdata_exc[, (ncol(fitdata_exc) - 5):ncol(fitdata_exc)] <- round(fitdata_exc[, (ncol(fitdata_exc) - 5):ncol(fitdata_exc)], 0)
@@ -316,8 +367,10 @@ print(fitdata_exc)
 ```{r, fig.height = 7.5, fig.width = 7.5}
 plot_metric <- function(metric_name, real_metric = NULL, real_metric_name = NULL, title = "") {
   combined_metric <- rbind(
+    data.frame(Model = "DD (bifactor)", Metric = cfa.testfit.bs[, metric_name]),
     data.frame(Model = "RDoC", Metric = rdoc.testfit.bs[, metric_name]),
-    data.frame(Model = "CFA", Metric = cfa.testfit.bs[, metric_name])
+    data.frame(Model = "DD", Metric = cfa.testfit2.bs[, metric_name]),
+    data.frame(Model = "RDoC (bifactor)", Metric = rdoc.testfit2.bs[, metric_name])
   )
   
   p <- ggplot(combined_metric, aes(x = Model, y = Metric, fill = Model)) +
@@ -336,7 +389,7 @@ plot_metric <- function(metric_name, real_metric = NULL, real_metric_name = NULL
   
   if (!is.null(real_metric)) {
     real_metric_df <- data.frame(
-      Model = c("RDoC", "CFA"),
+      Model = c("DD (bifactor)", "RDoC", "DD", "RDoC (bifactor)"),
       RealMetric = real_metric
     )
     p <- p + geom_quasirandom(data = real_metric_df, aes(x = Model, y = RealMetric), color = "black", size = 3)
@@ -346,11 +399,11 @@ plot_metric <- function(metric_name, real_metric = NULL, real_metric_name = NULL
 }
 
 # Usage for each metric
-plot_metric("cfi.robust", c(fitdata_exc$Robust.CFI[1], fitdata_exc$Robust.CFI[2]), "RealCFI", "Distribution of CFI")
-plot_metric("tli.robust",c(fitdata_exc$Robust.TLI[1], fitdata_exc$Robust.TLI[2]), "RealTLI", title = "Distribution of TLI")
-plot_metric("aic", c(fitdata_exc$aic[1], fitdata_exc$aic[2]), "RealAIC", title = "Distribution of AIC")
-plot_metric("bic", c(fitdata_exc$bic[1], fitdata_exc$bic[2]), "RealBIC", title = "Distribution of BIC")
-plot_metric("rmsea.robust", c(fitdata_exc$Robust.RMSEA[1], fitdata_exc$Robust.RMSEA[2]), "RealRMSEA", title = "Distribution of RMSEA")
+plot_metric("cfi.robust", c(fitdata_exc$Robust.CFI[2], fitdata_exc$Robust.CFI[1], fitdata_exc$Robust.CFI[4], fitdata_exc$Robust.CFI[3]), "RealCFI", "Distribution of CFI")
+plot_metric("tli.robust", c(fitdata_exc$Robust.TLI[2], fitdata_exc$Robust.TLI[1], fitdata_exc$Robust.TLI[4], fitdata_exc$Robust.TLI[3]), "RealTLI", title = "Distribution of TLI")
+plot_metric("aic", c(fitdata_exc$aic[2], fitdata_exc$aic[1], fitdata_exc$aic[4], fitdata_exc$aic[3]), "RealAIC", title = "Distribution of AIC")
+plot_metric("bic", c(fitdata_exc$bic[2], fitdata_exc$bic[1], fitdata_exc$bic[4], fitdata_exc$bic[3]), "RealBIC", title = "Distribution of BIC")
+plot_metric("rmsea.robust", c(fitdata_exc$Robust.RMSEA[2], fitdata_exc$Robust.RMSEA[1], fitdata_exc$Robust.RMSEA[4], fitdata_exc$Robust.RMSEA[3]), "RealRMSEA", title = "Distribution of RMSEA")
 ```
 
 ```{r, fig.height = 4, fig.width = 4}
@@ -404,4 +457,51 @@ for (i in 1:5) {
   cat("P-Value:", p_value, "\n")
   cat("Significance:", significance, "\n\n")
 }
+```
+
+```{r, fig.height = 4, fig.width = 4}
+rmseadata = data.frame(
+  Value = c(cfa.testfit.bs[, 5], cfa.testfit2.bs[, 5], rdoc.testfit.bs[, 5], rdoc.testfit2.bs[, 5]),
+  Group = factor(rep(c('cfa.fit.bs', 'cfanobi.fit.bs', 'rdoc.fit.bs', 'rdocbi.fit.bs'), each = 5000))
+)
+anova_result = aov(Value ~ Group, data = rmseadata)
+summary(anova_result)
+pairwise_comparisons = glht(anova_result, linfct = mcp(Group = "Tukey"))
+summary(pairwise_comparisons)
+
+cfidata = data.frame(
+  Value = c(cfa.testfit.bs[, 1], cfa.testfit2.bs[, 1], rdoc.testfit.bs[, 1], rdoc.testfit2.bs[, 1]),
+  Group = factor(rep(c('cfa.fit.bs', 'cfanobi.fit.bs', 'rdoc.fit.bs', 'rdocbi.fit.bs'), each = 5000))
+)
+anova_result = aov(Value ~ Group, data = cfidata)
+summary(anova_result)
+pairwise_comparisons = glht(anova_result, linfct = mcp(Group = "Tukey"))
+summary(pairwise_comparisons)
+
+tlidata = data.frame(
+  Value = c(cfa.testfit.bs[, 2], cfa.testfit2.bs[, 2], rdoc.testfit.bs[, 2], rdoc.testfit2.bs[, 2]),
+  Group = factor(rep(c('cfa.fit.bs', 'cfanobi.fit.bs', 'rdoc.fit.bs', 'rdocbi.fit.bs'), each = 5000))
+)
+anova_result = aov(Value ~ Group, data = tlidata)
+summary(anova_result)
+pairwise_comparisons = glht(anova_result, linfct = mcp(Group = "Tukey"))
+summary(pairwise_comparisons)
+
+aicdata = data.frame(
+  Value = c(cfa.testfit.bs[, 3], cfa.testfit2.bs[, 3], rdoc.testfit.bs[, 3], rdoc.testfit2.bs[, 3]),
+  Group = factor(rep(c('cfa.fit.bs', 'cfanobi.fit.bs', 'rdoc.fit.bs', 'rdocbi.fit.bs'), each = 5000))
+)
+anova_result = aov(Value ~ Group, data = aicdata)
+summary(anova_result)
+pairwise_comparisons = glht(anova_result, linfct = mcp(Group = "Tukey"))
+summary(pairwise_comparisons)
+
+bicdata = data.frame(
+  Value = c(cfa.testfit.bs[, 4], cfa.testfit2.bs[, 4], rdoc.testfit.bs[, 4], rdoc.testfit2.bs[, 4]),
+  Group = factor(rep(c('cfa.fit.bs', 'cfanobi.fit.bs', 'rdoc.fit.bs', 'rdocbi.fit.bs'), each = 5000))
+)
+anova_result = aov(Value ~ Group, data = bicdata)
+summary(anova_result)
+pairwise_comparisons = glht(anova_result, linfct = mcp(Group = "Tukey"))
+summary(pairwise_comparisons)
 ```
