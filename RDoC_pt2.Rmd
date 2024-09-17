@@ -232,6 +232,7 @@ lavInspect(rdoc.testfit, "cov.lv")
 ```
 
 ```{r, fig.height = 8, fig.width = 8}
+rdoc.testfit2.model <- c(rdoc.testfit2.model, "CSP2525 ~~ 0*CSP2525")
 rdoc.testfit2 = cfa(rdoc.testfit2.model, data_exc, estimator = "MLR", std.lv = TRUE, orthogonal = TRUE, check.gradient = FALSE)
 semPaths(rdoc.testfit2, whatLabels = "std", layout="tree", edge.label.cex=1)
 summary(rdoc.testfit2, standardized=TRUE, rsquare=TRUE, fit.measures=TRUE)
