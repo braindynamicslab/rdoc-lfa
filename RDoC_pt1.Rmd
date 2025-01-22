@@ -845,23 +845,38 @@ column_labels <- c("cfi", "tli", "aic", "bic", "rmsea")
 
 for (i in 1:5) {
   cat("Column:", column_labels[i], "\n")
-  
-  # Perform the t-test and ignore NaN values
-  t_result <- t.test(rdoc.testfit.bs[, i], cfa.testfit.bs[, i], na.action = na.exclude)
-  
-  # Extract the t-statistic, p-value, and degrees of freedom
-  t_statistic <- t_result$statistic
-  p_value <- round(t_result$p.value, 3)
-  degrees_of_freedom <- t_result$parameter
-  
+
+  # Perform the Mann-Whitney U Test and ignore NaN values
+  mw_result <- wilcox.test(rdoc.testfit.bs[, i], cfa.testfit.bs[, i], na.action = na.exclude)
+
+  # Extract the W statistic (U statistic in other software), p-value, and add manual calculation for degrees of freedom if needed
+  w_statistic <- mw_result$statistic
+  p_value <- mw_result$p.value
+  # Mann-Whitney U Test does not inherently have degrees of freedom, so this part is omitted
+
   # Determine the significance
-  significance <- ifelse(p_value < 0.05, "Significant", "Not Significant")
-  
+  if (p_value < 0.05) {
+    significance <- "Significant"
+  } else {
+    significance <- "Not Significant"
+  }
+
   # Print the results for the current column
-  cat("T-Statistic:", t_statistic, "\n")
-  cat("Degrees of Freedom:", degrees_of_freedom, "\n") # This line ensures degrees of freedom are displayed
+  cat("W-Statistic (U):", w_statistic, "\n")
   cat("P-Value:", p_value, "\n")
   cat("Significance:", significance, "\n\n")
+  
+  # Calculate the effect size (r) for Mann-Whitney U test
+  n1 <- sum(!is.na(rdoc.testfit.bs[, i]))  # Sample size group 1
+  n2 <- sum(!is.na(cfa.testfit.bs[, i]))  # Sample size group 2
+  N <- n1 + n2  # Total observations
+
+  # Approximate Z from the W-statistic
+  z_score <- (w_statistic - (n1 * n2) / 2) / sqrt(n1 * n2 * (n1 + n2 + 1) / 12)
+  effect_size_r <- z_score / sqrt(N)
+  
+  cat("Z-Score:", round(z_score, 3), "\n")
+  cat("Effect Size (r):", round(effect_size_r, 3), "\n\n")
 }
 ```
 
